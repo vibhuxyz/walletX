@@ -26,7 +26,7 @@ const FEATURES = [
   {
     icon: QrCode,
     title: "Payment QR Codes",
-    desc: "Accept payments from any FineWallet user instantly with dynamic QR codes.",
+    desc: "Accept payments from any WalletX user instantly with dynamic QR codes.",
   },
   {
     icon: BarChart3,
@@ -116,7 +116,7 @@ export default function MerchantNotFound() {
                 <span className="text-[#25d366]">COMING SOON</span>
               </h1>
               <p className="mx-auto max-w-[460px] text-base leading-relaxed text-[#5a7a6a]">
-                We're building a world-class merchant experience for FineWallet
+                We're building a world-class merchant experience for WalletX
                 — accept payments, track every rupee, and grow your business
                 from one powerful dashboard.
               </p>
@@ -214,7 +214,7 @@ export default function MerchantNotFound() {
       {/* ── Bottom bar ── */}
       <div className="border-t border-gray-100 py-4 text-center">
         <p className="text-[11px] font-medium tracking-widest uppercase text-gray-300">
-          Error · Merchant Portal · FineWallet
+          Error · Merchant Portal · WalletX
         </p>
       </div>
     </div>

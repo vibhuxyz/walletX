@@ -46,7 +46,7 @@ export function Hero() {
         <div className="mt-14 overflow-hidden rounded-2xl">
           <Image
             src="/images/hero-phone.jpg"
-            alt="Person using FineWallet on their smartphone"
+            alt="Person using WalletX on their smartphone"
             width={1200}
             height={600}
             className="h-[320px] w-full object-cover md:h-[480px]"

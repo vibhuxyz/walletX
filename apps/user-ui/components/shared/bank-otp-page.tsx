@@ -25,7 +25,7 @@ export function BankOtpPage({
   cardType = "Account",
   maskedAccountNumber,
   maskedPhone = "+1 (XXX) XXX-X567",
-  merchantName = "FineWallet",
+  merchantName = "WalletX",
   amount,
   currency = "INR",
   onConfirm,

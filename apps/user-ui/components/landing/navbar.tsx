@@ -122,7 +122,7 @@ export function Navbar() {
             <Wallet className="h-5 w-5" />
           </div>
           <span className="text-xl font-bold tracking-tight text-foreground">
-            FineWallet
+            WalletX
           </span>
         </Link>
 

@@ -256,7 +256,7 @@ export default function LoginPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-foreground/15">
                 <Wallet className="h-4 w-4 text-accent-foreground" />
               </div>
-              <span className="text-base font-bold tracking-tight text-accent-foreground">FineWallet</span>
+              <span className="text-base font-bold tracking-tight text-accent-foreground">WalletX</span>
             </div>
             <h2 className="text-[26px] font-extrabold leading-tight text-accent-foreground text-balance mb-2">
               Smart &amp; Secure<br />Wallet
@@ -389,7 +389,7 @@ export default function LoginPage() {
           Welcome back
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in to your FineWallet account
+          Sign in to your WalletX account
         </p>
       </div>
 

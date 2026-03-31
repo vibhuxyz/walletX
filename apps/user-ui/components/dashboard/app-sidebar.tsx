@@ -42,7 +42,7 @@ export function AppSidebar() {
             </svg>
           </div>
           <span className="text-xl font-bold tracking-tight text-[#373d48]">
-            E-Wallet
+            WalletX
           </span>
         </Link>
       </SidebarHeader>

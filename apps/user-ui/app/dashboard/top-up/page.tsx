@@ -506,7 +506,7 @@ function TopUpContent() {
                   bankName: order?.account.bankName ?? selectedBank.bankName,
                   maskedAccount:
                     order?.account.maskedAccount ?? selectedBank.accountNumber,
-                  merchantName: "FineWallet",
+                  merchantName: "WalletX",
                   amount: formatCurrency(parsedAmount),
                 }}
                 otp={otp}

@@ -8,7 +8,7 @@ import { useCurrentUser } from "@/lib/wallet/useWalletQuery";
 import { getInitials } from "@/lib/constants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Home } from "lucide-react";
 import { ConnectionStatusIndicator } from "@/components/shared/connection-status";
 
 export default function DashboardLayout({
@@ -31,7 +31,16 @@ export default function DashboardLayout({
         <div className="mx-auto flex w-full max-w-[1440px]">
           <AppSidebar />
           <SidebarInset className="bg-white border-none flex-1">
-            <header className="flex h-20 items-center justify-end px-8 gap-6 bg-white">
+            <header className="flex h-20 items-center justify-between px-8 gap-6 bg-white">
+              {/* Home button */}
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-[#373d48] transition-all hover:border-[#25d366] hover:text-[#25d366] hover:shadow-sm"
+              >
+                <Home className="h-4 w-4" />
+                Home
+              </Link>
+
               {isLoading ? (
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-9 w-9 rounded-full" />

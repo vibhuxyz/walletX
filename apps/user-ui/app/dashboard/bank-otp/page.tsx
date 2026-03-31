@@ -13,7 +13,7 @@ function BankOtpContent() {
 
   const bankName = searchParams.get("bank") || "Chase Bank";
   const cardNumber = searchParams.get("card") || "4591 60XX XXXX 0055";
-  const merchantName = searchParams.get("merchant") || "FineWallet";
+  const merchantName = searchParams.get("merchant") || "WalletX";
   const amount = searchParams.get("amount") || "100.00";
   const returnUrl = searchParams.get("return") || "/dashboard";
 

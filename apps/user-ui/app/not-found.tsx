@@ -59,7 +59,7 @@ export default function NotFound() {
             <Wallet className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-black tracking-tight text-[#0f1c17]">
-            FineWallet
+            WalletX
           </span>
         </Link>
       </header>
@@ -152,7 +152,7 @@ export default function NotFound() {
         style={{ animation: mounted ? "fadeUp .4s ease forwards .7s" : "none" }}
       >
         <p className="text-[11px] font-medium tracking-widest uppercase text-gray-300">
-          Error 404 · FineWallet
+          Error 404 · WalletX
         </p>
       </footer>
 

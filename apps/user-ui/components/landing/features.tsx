@@ -90,7 +90,7 @@ export function Features() {
             <div className="overflow-hidden rounded-2xl">
               <Image
                 src="/images/lifestyle-payment.jpg"
-                alt="Making a payment with FineWallet"
+                alt="Making a payment with WalletX"
                 width={600}
                 height={500}
                 className="h-[360px] w-full object-cover lg:h-[480px]"

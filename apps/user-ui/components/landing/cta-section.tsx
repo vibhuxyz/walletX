@@ -61,7 +61,7 @@ export function CtaSection() {
           unlimited possibilities
         </h2>
         <p className="mx-auto mt-5 max-w-xl text-[#4a6657] text-pretty">
-          Join thousands of users who trust FineWallet for fast, secure, and
+          Join thousands of users who trust WalletX for fast, secure, and
           easy money transfers. Your wallet is just a signup away.
         </p>
         <div className="mt-8 flex justify-center">
@@ -82,7 +82,7 @@ export function Footer() {
               <Wallet className="h-5 w-5 text-[#dde8db]" />
             </div>
             <span className="text-xl font-black tracking-tight text-[#0f1c17]">
-              FineWallet
+              WalletX
             </span>
           </Link>
 
@@ -142,14 +142,14 @@ export function Footer() {
 
         <div className="space-y-3">
           <p className="max-w-3xl text-xs leading-relaxed text-[#0f1c17]/45">
-            © FineWallet Payments Limited 2026. All rights reserved. FineWallet
+            © WalletX Payments Limited 2026. All rights reserved. WalletX
             is authorised and regulated for the issuance of electronic money
             under applicable financial regulations.
           </p>
           <p className="max-w-3xl text-xs leading-relaxed text-[#0f1c17]/35">
-            FineWallet operates in compliance with the Reserve Bank of India
+            WalletX operates in compliance with the Reserve Bank of India
             (RBI) guidelines for prepaid payment instruments and digital
-            wallets. Funds held in your FineWallet are safeguarded in accordance
+            wallets. Funds held in your WalletX are safeguarded in accordance
             with applicable e-money regulations.
           </p>
         </div>

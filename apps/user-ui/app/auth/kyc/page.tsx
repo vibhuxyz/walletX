@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import KycForm from "./KycForm";
 
 export const metadata: Metadata = {
-  title: "Verify Identity | FineWallet",
+  title: "Verify Identity | WalletX",
   description:
-    "Complete your KYC verification to activate your FineWallet and unlock all features.",
+    "Complete your KYC verification to activate your WalletX and unlock all features.",
   robots: { index: false, follow: false },
 };
 

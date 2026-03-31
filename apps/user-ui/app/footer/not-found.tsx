@@ -142,7 +142,7 @@ export default function FooterPageNotFound() {
             <Wallet className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-black tracking-tight text-[#0f1c17]">
-            FineWallet
+            WalletX
           </span>
         </Link>
         <Button
@@ -210,7 +210,7 @@ export default function FooterPageNotFound() {
             </h1>
             <p className="mx-auto max-w-md text-[15px] leading-relaxed text-[#5a7a6a]">
               {message} We're working hard to get everything ready for you. In
-              the meantime, feel free to explore the rest of FineWallet.
+              the meantime, feel free to explore the rest of WalletX.
             </p>
           </motion.div>
 
@@ -300,7 +300,7 @@ export default function FooterPageNotFound() {
       {/* Footer bar */}
       <div className="border-t border-gray-100 py-4 text-center">
         <p className="text-[11px] font-medium tracking-widest uppercase text-gray-300">
-          Page Not Found · FineWallet
+          Page Not Found · WalletX
         </p>
       </div>
     </div>

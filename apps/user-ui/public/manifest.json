@@ -1,7 +1,7 @@
 {
-  "name": "FineWallet",
-  "short_name": "FineWallet",
-  "description": "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
+  "name": "WalletX",
+  "short_name": "WalletX",
+  "description": "Send money instantly, top up from your bank, request payments, and track spending analytics with WalletX.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0d1117",

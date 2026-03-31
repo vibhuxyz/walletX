@@ -81,7 +81,7 @@ export default function RegisterForm() {
           Create Account
         </p>
         <h2 className="text-[22px] font-extrabold tracking-tight text-foreground text-balance">
-          Welcome to FineWallet
+          Welcome to WalletX
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Get started in just a few simple steps — it&apos;s free.

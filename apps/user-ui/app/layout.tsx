@@ -48,41 +48,42 @@ const connectionHints = Array.from(
 );
 
 export const metadata: Metadata = {
-  title: "FineWallet - Send & Manage Money Instantly",
+  title: "WalletX - Send & Manage Money Instantly",
   description:
-    "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
-  metadataBase: new URL("https://wallet.vibhugupta.me"),
+    "Send money instantly, top up from your bank, request payments, and track spending analytics — all in one secure INR wallet with WalletX.",
+  metadataBase: new URL("https://walletxx.vercel.app"),
   keywords: [
-    "wallet",
-    "payments",
-    "upi",
+    "walletx",
     "digital wallet",
-    "finewallet",
     "money transfer",
+    "p2p transfer",
+    "send money",
+    "top up",
+    "bank account",
+    "spending analytics",
+    "inr wallet",
+    "upi",
+    "payments",
+    "kyc",
+    "request money",
   ],
 
   openGraph: {
-    title: "FineWallet - Send & Manage Money Instantly",
+    title: "WalletX - Send & Manage Money Instantly",
     description:
-      "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
-    url: "https://wallet.vibhugupta.me",
-    siteName: "FineWallet",
+      "Send money instantly, top up from your bank, request payments, and track spending analytics — all in one secure INR wallet with WalletX.",
+    url: "https://walletxx.vercel.app",
+    siteName: "WalletX",
     type: "website",
-    images: [
-      {
-        url: "/og-image.svg",
-        width: 1200,
-        height: 630,
-        alt: "FineWallet - Send & Manage Money Instantly",
-      },
-    ],
+    // OG image is auto-generated as PNG by app/opengraph-image.tsx
+    // Next.js injects it automatically — no manual images[] needed
   },
   twitter: {
     card: "summary_large_image",
-    title: "FineWallet - Send & Manage Money Instantly",
+    title: "WalletX - Send & Manage Money Instantly",
     description:
-      "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
-    images: ["/og-image.svg"],
+      "Send money instantly, top up from your bank, request payments, and track spending analytics — all in one secure INR wallet with WalletX.",
+    // twitter image is resolved from app/opengraph-image.tsx automatically
   },
 };
 

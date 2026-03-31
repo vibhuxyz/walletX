@@ -1,32 +1,199 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0E1B2A" />
-      <stop offset="1" stop-color="#142C46" />
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a1a10"/>
+      <stop offset="100%" stop-color="#0f2318"/>
     </linearGradient>
-    <linearGradient id="accent" x1="210" y1="210" x2="520" y2="500" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#00C2FF" />
-      <stop offset="1" stop-color="#1EE9B6" />
+
+    <!-- Green glow for card -->
+    <linearGradient id="cardGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d8a4a"/>
+      <stop offset="100%" stop-color="#0f5c2e"/>
     </linearGradient>
+
+    <!-- Shine on card -->
+    <linearGradient id="cardShine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Badge gradient -->
+    <linearGradient id="badgeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#25d366"/>
+      <stop offset="100%" stop-color="#1ab354"/>
+    </linearGradient>
+
+    <!-- Radial glow top-right -->
+    <radialGradient id="glowRight" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#25d366" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#25d366" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Radial glow bottom-left -->
+    <radialGradient id="glowLeft" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#25d366" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#25d366" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Drop shadow filter for card -->
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="20" stdDeviation="30" flood-color="#25d366" flood-opacity="0.20"/>
+    </filter>
+
+    <!-- Clip for card rounded corners -->
+    <clipPath id="cardClip">
+      <rect x="720" y="110" width="380" height="230" rx="28"/>
+    </clipPath>
   </defs>
 
-  <rect width="1200" height="630" fill="url(#bg)" />
-  <circle cx="1030" cy="120" r="180" fill="#1EE9B6" fill-opacity="0.15" />
-  <circle cx="140" cy="560" r="220" fill="#00C2FF" fill-opacity="0.12" />
+  <!-- ── Background ── -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
 
-  <rect x="150" y="150" width="240" height="240" rx="44" fill="url(#accent)" />
-  <rect x="205" y="210" width="130" height="28" rx="14" fill="#0E1B2A" fill-opacity="0.85" />
-  <rect x="205" y="262" width="96" height="28" rx="14" fill="#0E1B2A" fill-opacity="0.75" />
-  <rect x="205" y="314" width="164" height="28" rx="14" fill="#0E1B2A" fill-opacity="0.65" />
+  <!-- Subtle grid lines -->
+  <g stroke="#25d366" stroke-opacity="0.04" stroke-width="1">
+    <line x1="0" y1="105" x2="1200" y2="105"/>
+    <line x1="0" y1="210" x2="1200" y2="210"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+    <line x1="0" y1="525" x2="1200" y2="525"/>
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+  </g>
 
-  <text x="450" y="260" fill="white" font-family="Inter, Arial, sans-serif" font-size="78" font-weight="800">
-    FineWallet
+  <!-- Glow blobs -->
+  <ellipse cx="980" cy="180" rx="320" ry="280" fill="url(#glowRight)"/>
+  <ellipse cx="140" cy="520" rx="240" ry="200" fill="url(#glowLeft)"/>
+
+  <!-- ── Left content ── -->
+
+  <!-- Logo mark -->
+  <rect x="80" y="80" width="52" height="52" rx="14" fill="#25d366"/>
+  <text x="106" y="116" fill="#0a1a10" font-family="Arial Black, Arial, sans-serif" font-size="30" font-weight="900" text-anchor="middle">W</text>
+
+  <!-- App name -->
+  <text x="148" y="119" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="34" font-weight="900" letter-spacing="-0.5">WalletX</text>
+
+  <!-- Divider -->
+  <rect x="80" y="162" width="48" height="3" rx="2" fill="#25d366"/>
+
+  <!-- Main headline line 1 -->
+  <text x="80" y="248" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="62" font-weight="900" letter-spacing="-2">SEND &amp; MANAGE</text>
+  <!-- Main headline line 2 -->
+  <text x="80" y="320" fill="#25d366" font-family="Arial Black, Arial, sans-serif" font-size="62" font-weight="900" letter-spacing="-2">MONEY INSTANTLY</text>
+
+  <!-- Subtitle -->
+  <text x="80" y="370" fill="#7dc49a" font-family="Arial, sans-serif" font-size="22" font-weight="400">
+    Link banks · P2P transfers · Spend analytics · KYC verified
   </text>
-  <text x="450" y="330" fill="#D0DFEE" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="500">
-    Send &amp; Manage Money Instantly
-  </text>
-  <text x="450" y="390" fill="#9CB5CC" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="400">
-    UPI-like wallet IDs • Secure transfers • Realtime analytics
-  </text>
+
+  <!-- Feature pills row -->
+  <!-- Pill 1 -->
+  <rect x="80" y="410" width="148" height="38" rx="19" fill="#25d366" fill-opacity="0.12" stroke="#25d366" stroke-opacity="0.30" stroke-width="1"/>
+  <text x="154" y="434" fill="#25d366" font-family="Arial, sans-serif" font-size="15" font-weight="700" text-anchor="middle">⚡ Instant Send</text>
+
+  <!-- Pill 2 -->
+  <rect x="240" y="410" width="148" height="38" rx="19" fill="#25d366" fill-opacity="0.12" stroke="#25d366" stroke-opacity="0.30" stroke-width="1"/>
+  <text x="314" y="434" fill="#25d366" font-family="Arial, sans-serif" font-size="15" font-weight="700" text-anchor="middle">🏦 Bank Top-Up</text>
+
+  <!-- Pill 3 -->
+  <rect x="400" y="410" width="148" height="38" rx="19" fill="#25d366" fill-opacity="0.12" stroke="#25d366" stroke-opacity="0.30" stroke-width="1"/>
+  <text x="474" y="434" fill="#25d366" font-family="Arial, sans-serif" font-size="15" font-weight="700" text-anchor="middle">📊 Analytics</text>
+
+  <!-- Pill 4 -->
+  <rect x="560" y="410" width="148" height="38" rx="19" fill="#25d366" fill-opacity="0.12" stroke="#25d366" stroke-opacity="0.30" stroke-width="1"/>
+  <text x="634" y="434" fill="#25d366" font-family="Arial, sans-serif" font-size="15" font-weight="700" text-anchor="middle">🛡 KYC Secure</text>
+
+  <!-- Sign up CTA -->
+  <rect x="80" y="476" width="200" height="50" rx="25" fill="url(#badgeGrad)"/>
+  <text x="180" y="507" fill="#0a1a10" font-family="Arial Black, Arial, sans-serif" font-size="17" font-weight="900" text-anchor="middle">Sign up free →</text>
+
+  <!-- Rating badge -->
+  <rect x="296" y="476" width="210" height="50" rx="25" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.10" stroke-width="1"/>
+  <text x="401" y="499" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700" text-anchor="middle">⭐ 4.8 · 1.3M reviews</text>
+  <text x="401" y="516" fill="#7dc49a" font-family="Arial, sans-serif" font-size="12" font-weight="400" text-anchor="middle">Google Play &amp; App Store</text>
+
+  <!-- ── Right: Wallet Card Mockup ── -->
+  <!-- Card shadow / glow -->
+  <rect x="720" y="110" width="380" height="230" rx="28" fill="#0f2318" filter="url(#cardShadow)"/>
+
+  <!-- Card body -->
+  <rect x="720" y="110" width="380" height="230" rx="28" fill="url(#cardGrad)"/>
+  <!-- Card shine overlay -->
+  <rect x="720" y="110" width="380" height="230" rx="28" fill="url(#cardShine)"/>
+
+  <!-- Card inner pattern circles -->
+  <circle cx="1020" cy="150" r="100" fill="#ffffff" fill-opacity="0.05"/>
+  <circle cx="1060" cy="280" r="80" fill="#ffffff" fill-opacity="0.04"/>
+
+  <!-- Card chip -->
+  <rect x="752" y="148" width="44" height="34" rx="6" fill="#f0c040" fill-opacity="0.90"/>
+  <line x1="752" y1="165" x2="796" y2="165" stroke="#c89a00" stroke-width="1.5" stroke-opacity="0.5"/>
+  <line x1="774" y1="148" x2="774" y2="182" stroke="#c89a00" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Card type label -->
+  <text x="1086" y="165" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill-opacity="0.7" text-anchor="end">INR WALLET</text>
+
+  <!-- Balance label -->
+  <text x="752" y="218" fill="#a8e6c1" font-family="Arial, sans-serif" font-size="13" font-weight="500">TOTAL BALANCE</text>
+
+  <!-- Balance amount -->
+  <text x="752" y="256" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="38" font-weight="900" letter-spacing="-1">₹9,128.00</text>
+
+  <!-- Card footer -->
+  <rect x="720" y="298" width="380" height="42" rx="0" fill="#000000" fill-opacity="0.20"/>
+  <rect x="720" y="298" width="380" height="42" rx="0"/>
+  <rect x="720" y="298" width="380" height="42" rx="28" fill="#000000" fill-opacity="0.18"/>
+  <!-- masked number -->
+  <text x="752" y="326" fill="#a8e6c1" font-family="Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="2">•••• •••• •••• 6805</text>
+  <!-- Active badge on card -->
+  <rect x="1010" y="311" width="70" height="22" rx="11" fill="#25d366"/>
+  <text x="1045" y="326" fill="#0a1a10" font-family="Arial, sans-serif" font-size="11" font-weight="800" text-anchor="middle">● ACTIVE</text>
+
+  <!-- ── Mini transaction list below card ── -->
+  <rect x="720" y="362" width="380" height="64" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+  <!-- tx 1 -->
+  <circle cx="748" cy="381" r="12" fill="#25d366" fill-opacity="0.20"/>
+  <text x="748" y="385" fill="#25d366" font-family="Arial, sans-serif" font-size="11" text-anchor="middle">↑</text>
+  <text x="770" y="380" fill="#ffffff" font-family="Arial, sans-serif" font-size="12" font-weight="600">Send to Anisha</text>
+  <text x="770" y="395" fill="#7dc49a" font-family="Arial, sans-serif" font-size="11">P2P Transfer</text>
+  <text x="1086" y="381" fill="#f87171" font-family="Arial, sans-serif" font-size="13" font-weight="700" text-anchor="end">-₹500</text>
+  <text x="1086" y="396" fill="#25d366" font-family="Arial, sans-serif" font-size="10" text-anchor="end">SUCCESS</text>
+  <!-- divider -->
+  <line x1="736" y1="407" x2="1092" y2="407" stroke="#ffffff" stroke-opacity="0.06" stroke-width="1"/>
+  <!-- tx 2 -->
+  <circle cx="748" cy="421" r="12" fill="#25d366" fill-opacity="0.20"/>
+  <text x="748" y="425" fill="#25d366" font-family="Arial, sans-serif" font-size="11" text-anchor="middle">↓</text>
+  <text x="770" y="420" fill="#ffffff" font-family="Arial, sans-serif" font-size="12" font-weight="600">Wallet Top-Up</text>
+  <text x="770" y="435" fill="#7dc49a" font-family="Arial, sans-serif" font-size="11">Axis Bank</text>
+  <text x="1086" y="421" fill="#4ade80" font-family="Arial, sans-serif" font-size="13" font-weight="700" text-anchor="end">+₹2,000</text>
+  <text x="1086" y="436" fill="#25d366" font-family="Arial, sans-serif" font-size="10" text-anchor="end">SUCCESS</text>
+
+  <!-- ── Mini analytics card ── -->
+  <rect x="720" y="444" width="180" height="100" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+  <text x="740" y="466" fill="#7dc49a" font-family="Arial, sans-serif" font-size="11" font-weight="600">6-MONTH INCOME</text>
+  <text x="740" y="496" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="24" font-weight="900">₹24,500</text>
+  <!-- mini bar chart -->
+  <rect x="740" y="516" width="16" height="18" rx="3" fill="#25d366" fill-opacity="0.4"/>
+  <rect x="762" y="510" width="16" height="24" rx="3" fill="#25d366" fill-opacity="0.55"/>
+  <rect x="784" y="504" width="16" height="30" rx="3" fill="#25d366" fill-opacity="0.70"/>
+  <rect x="806" y="498" width="16" height="36" rx="3" fill="#25d366" fill-opacity="0.85"/>
+  <rect x="828" y="508" width="16" height="26" rx="3" fill="#25d366" fill-opacity="0.65"/>
+  <rect x="850" y="494" width="16" height="40" rx="3" fill="#25d366"/>
+
+  <!-- ── KYC verified badge ── -->
+  <rect x="916" y="444" width="184" height="100" rx="16" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+  <text x="1008" y="484" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700" text-anchor="middle">KYC Verified</text>
+  <text x="1008" y="506" fill="#7dc49a" font-family="Arial, sans-serif" font-size="11" text-anchor="middle">Bank-grade security</text>
+  <rect x="952" y="514" width="112" height="22" rx="11" fill="#25d366" fill-opacity="0.15" stroke="#25d366" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="1008" y="529" fill="#25d366" font-family="Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">✓ 256-bit Encrypted</text>
+
+  <!-- ── Bottom bar ── -->
+  <rect x="0" y="600" width="1200" height="30" fill="#0a1a10"/>
+  <text x="80" y="620" fill="#7dc49a" font-family="Arial, sans-serif" font-size="13" font-weight="500">walletxx.vercel.app</text>
+  <text x="600" y="620" fill="#3a6b4a" font-family="Arial, sans-serif" font-size="13" font-weight="500" text-anchor="middle">Send Money · Top Up · Analytics · Withdraw · Request</text>
+  <text x="1120" y="620" fill="#3a6b4a" font-family="Arial, sans-serif" font-size="13" font-weight="500" text-anchor="end">© 2026 WalletX</text>
 </svg>
-
