@@ -11,7 +11,12 @@ import {
   verifyPin,
 } from "@repo/libs";
 import { Exchanges, publishMessage, RoutingKeys } from "@repo/rabbitmq";
-import { redis, RedisKeys, RedisTTL } from "@repo/redis";
+import {
+  invalidateWalletReadCaches,
+  redis,
+  RedisKeys,
+  RedisTTL,
+} from "@repo/redis";
 import { nanoid } from "nanoid";
 
 const logger = new Logger("topup Service");
@@ -266,6 +271,7 @@ export const confirmTopupOTP = async (
         failureCode: "MAX_OTP_ATTEMPTS",
       },
     });
+    await invalidateWalletReadCaches([userId]);
     throw new ApiError(400, "MAX_ATTEMPTS", "Maximum OTP attempts exceeded");
   }
 
@@ -319,6 +325,8 @@ export const confirmTopupOTP = async (
       ledgerId: ledgerId,
     },
   });
+
+  await invalidateWalletReadCaches([userId]);
 
   logger.info("OTP verified, creating pending ledger entry", {
     orderId,

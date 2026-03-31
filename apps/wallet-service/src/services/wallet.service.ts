@@ -11,11 +11,12 @@ import {
 import { Exchanges, RoutingKeys } from "@repo/rabbitmq";
 import {
   cacheGetOrSet,
-  invalidateCachePattern,
+  invalidateWalletReadCaches,
   redis,
   RedisKeys,
   RedisTTL,
 } from "@repo/redis";
+import { getLedgerAnalytics } from "./ledger.service.js";
 import { nanoid } from "nanoid";
 
 const logger = new Logger("wallet.service");
@@ -79,19 +80,6 @@ function toDisplayTransaction(entry: any) {
       },
     },
   };
-}
-
-async function invalidateWalletReadCaches(userIds: string[]) {
-  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
-
-  await Promise.all(
-    uniqueUserIds.flatMap((userId) => [
-      redis.del(RedisKeys.WALLET_BALANCE(userId)),
-      redis.del(RedisKeys.RECENT_RECIPIENTS(userId)),
-      redis.del(RedisKeys.DASHBOARD_SUMMARY(userId)),
-      invalidateCachePattern(RedisKeys.LEDGER_ANALYTICS_PATTERN(userId)),
-    ]),
-  );
 }
 
 async function enqueueRealtimeWalletUpdateTx(
@@ -393,139 +381,12 @@ export const getDashboard = async (userId: string) => {
           status: "PENDING",
         },
       }),
-      prismaPostgres.ledgerEntry.findMany({
-        where: {
-          userId,
-          status: "SUCCESS",
-          createdAt: {
-            gte: new Date(
-              Date.UTC(
-                new Date().getUTCFullYear(),
-                new Date().getUTCMonth() -
-                  (DEFAULT_DASHBOARD_ANALYTICS_MONTHS - 1),
-                1,
-                0,
-                0,
-                0,
-                0,
-              ),
-            ),
-          },
-        },
-        select: {
-          entryType: true,
-          amount: true,
-          createdAt: true,
-          metadata: true,
-        },
-      }),
+      getLedgerAnalytics(userId, DEFAULT_DASHBOARD_ANALYTICS_MONTHS),
     ]);
 
     if (!user) {
       throw new Error("User not found");
     }
-
-    const monthlyMap = new Map<
-      string,
-      { income: bigint; expense: bigint; net: bigint }
-    >();
-
-    const categoryAmountMap = new Map<string, bigint>();
-    const categoryCountMap = new Map<string, number>();
-
-    const now = new Date();
-    const startMonth = new Date(
-      Date.UTC(
-        now.getUTCFullYear(),
-        now.getUTCMonth() - (DEFAULT_DASHBOARD_ANALYTICS_MONTHS - 1),
-        1,
-        0,
-        0,
-        0,
-        0,
-      ),
-    );
-
-    for (let i = 0; i < DEFAULT_DASHBOARD_ANALYTICS_MONTHS; i++) {
-      const date = new Date(
-        Date.UTC(
-          startMonth.getUTCFullYear(),
-          startMonth.getUTCMonth() + i,
-          1,
-          0,
-          0,
-          0,
-          0,
-        ),
-      );
-      const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
-      monthlyMap.set(key, {
-        income: BigInt(0),
-        expense: BigInt(0),
-        net: BigInt(0),
-      });
-    }
-
-    let totalIncome = BigInt(0);
-    let totalExpenses = BigInt(0);
-
-    for (const entry of analytics) {
-      const monthKey = `${entry.createdAt.getUTCFullYear()}-${String(
-        entry.createdAt.getUTCMonth() + 1,
-      ).padStart(2, "0")}`;
-      const monthBucket = monthlyMap.get(monthKey);
-
-      if (!monthBucket) {
-        continue;
-      }
-
-      const normalizedAmount = entry.amount < 0n ? -entry.amount : entry.amount;
-
-      if (
-        entry.entryType === "WALLET_TOPUP" ||
-        entry.entryType === "P2P_RECEIVE" ||
-        entry.entryType === "MERCHANT_REFUND"
-      ) {
-        totalIncome += normalizedAmount;
-        monthBucket.income += normalizedAmount;
-        monthBucket.net += normalizedAmount;
-        continue;
-      }
-
-      if (
-        entry.entryType === "P2P_SEND" ||
-        entry.entryType === "MERCHANT_PAYMENT" ||
-        entry.entryType === "PAYMENT_REQUEST_PAID" ||
-        isWithdrawalEntry(entry)
-      ) {
-        totalExpenses += normalizedAmount;
-        monthBucket.expense += normalizedAmount;
-        monthBucket.net -= normalizedAmount;
-
-        const categoryName = isWithdrawalEntry(entry)
-          ? "Withdrawals"
-          : entry.entryType === "P2P_SEND"
-            ? "Transfers"
-            : entry.entryType === "MERCHANT_PAYMENT"
-              ? "Merchant Payments"
-              : "Request Payments";
-
-        categoryAmountMap.set(
-          categoryName,
-          (categoryAmountMap.get(categoryName) || BigInt(0)) + normalizedAmount,
-        );
-        categoryCountMap.set(
-          categoryName,
-          (categoryCountMap.get(categoryName) || 0) + 1,
-        );
-      }
-    }
-
-    const averageIncome =
-      totalIncome / BigInt(DEFAULT_DASHBOARD_ANALYTICS_MONTHS);
-    const averageExpenses =
-      totalExpenses / BigInt(DEFAULT_DASHBOARD_ANALYTICS_MONTHS);
-    const totalExpenseFloat = parseFloat(Currency.toRupees(totalExpenses));
 
     const latestRequestAt = [
       sentRequests[0]?.createdAt,
@@ -594,30 +455,8 @@ export const getDashboard = async (userId: string) => {
         },
       },
       analytics: {
-        summary: {
-          totalIncome: Currency.toRupees(totalIncome),
-          totalExpenses: Currency.toRupees(totalExpenses),
-          totalSpending: Currency.toRupees(totalExpenses),
-          netFlow: Currency.toRupees(totalIncome - totalExpenses),
-          averageMonthlyIncome: Currency.toRupees(averageIncome),
-          averageMonthlyExpenses: Currency.toRupees(averageExpenses),
-        },
-        categories: Array.from(categoryAmountMap.entries())
-          .map(([name, amount]) => {
-            const amountValue = Currency.toRupees(amount);
-            const amountFloat = parseFloat(amountValue);
-            return {
-              name,
-              amount: amountValue,
-              percentage:
-                totalExpenseFloat > 0
-                  ? Number(((amountFloat / totalExpenseFloat) * 100).toFixed(2))
-                  : 0,
-              transactionCount: categoryCountMap.get(name) || 0,
-            };
-          })
-          .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount))
-          .slice(0, 3),
+        summary: analytics.summary,
+        categories: analytics.categories.slice(0, 3),
       },
       freshness: {
         generatedAt: new Date().toISOString(),

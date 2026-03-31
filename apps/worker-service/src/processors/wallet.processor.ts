@@ -1,7 +1,7 @@
 import { prismaPostgres } from "@repo/db-postgres";
 import { Currency, Logger } from "@repo/libs";
 import { Exchanges, RoutingKeys } from "@repo/rabbitmq";
-import { invalidateCachePattern, redis, RedisKeys } from "@repo/redis";
+import { invalidateWalletReadCaches } from "@repo/redis";
 
 const logger = new Logger("WalletProcessor");
 
@@ -130,12 +130,7 @@ export const creditWallet = async (
   });
 
   // Clear wallet balance cache
-  await Promise.all([
-    redis.del(RedisKeys.WALLET_BALANCE(order.userId)),
-    redis.del(RedisKeys.DASHBOARD_SUMMARY(order.userId)),
-    redis.del(RedisKeys.DASHBOARD_FRESHNESS(order.userId)),
-    invalidateCachePattern(RedisKeys.LEDGER_ANALYTICS_PATTERN(order.userId)),
-  ]);
+  await invalidateWalletReadCaches([order.userId]);
 
   logger.info("✅ Wallet credited successfully", {
     userId: order.userId,
@@ -229,10 +224,7 @@ export const handleFailedDebit = async (
       });
     });
 
-    await Promise.all([
-      redis.del(RedisKeys.DASHBOARD_SUMMARY(order.userId)),
-      redis.del(RedisKeys.DASHBOARD_FRESHNESS(order.userId)),
-    ]);
+    await invalidateWalletReadCaches([order.userId]);
 
     logger.info("❌ Payment marked as failed", {
       orderId: order.id,

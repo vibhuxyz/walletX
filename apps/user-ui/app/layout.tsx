@@ -10,6 +10,42 @@ const inter = Inter({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+type ConnectionHint = {
+  origin: string;
+  dnsPrefetchHref: string;
+};
+
+function getConnectionHint(rawUrl?: string): ConnectionHint | null {
+  if (!rawUrl) return null;
+
+  try {
+    const parsed = new URL(rawUrl);
+    const protocol =
+      parsed.protocol === "ws:"
+        ? "http:"
+        : parsed.protocol === "wss:"
+          ? "https:"
+          : parsed.protocol;
+
+    return {
+      origin: `${protocol}//${parsed.host}`,
+      dnsPrefetchHref: `//${parsed.host}`,
+    };
+  } catch {
+    return null;
+  }
+}
+
+const connectionHints = Array.from(
+  new Map(
+    [
+      getConnectionHint(process.env.NEXT_PUBLIC_API_URL),
+      getConnectionHint(process.env.NEXT_PUBLIC_WS_URL),
+    ]
+      .filter((hint): hint is ConnectionHint => Boolean(hint))
+      .map((hint) => [hint.origin, hint]),
+  ).values(),
+);
 
 export const metadata: Metadata = {
   title: "FineWallet - Send & Manage Money Instantly",
@@ -27,7 +63,8 @@ export const metadata: Metadata = {
 
   openGraph: {
     title: "FineWallet - Send & Manage Money Instantly",
-    description: "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
+    description:
+      "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
     url: "https://wallet.vibhugupta.me",
     siteName: "FineWallet",
     type: "website",
@@ -62,6 +99,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} font-sans`}>
+      <head>
+        {connectionHints.map((hint) => (
+          <link
+            key={`dns-prefetch-${hint.origin}`}
+            rel="dns-prefetch"
+            href={hint.dnsPrefetchHref}
+          />
+        ))}
+        {connectionHints.map((hint) => (
+          <link
+            key={`preconnect-${hint.origin}`}
+            rel="preconnect"
+            href={hint.origin}
+            crossOrigin="anonymous"
+          />
+        ))}
+      </head>
       <body className="font-sans antialiased bg-background text-foreground ml-3 mr-3">
         <Providers>
           <AuthProvider>{children}</AuthProvider>

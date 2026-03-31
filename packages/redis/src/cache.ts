@@ -1,3 +1,4 @@
+import { RedisKeys } from "./keys.js";
 import { redis } from "./redisClient.js";
 
 export async function cacheGetOrSet<T>(
@@ -37,3 +38,31 @@ export async function invalidateCachePattern(pattern: string): Promise<number> {
   return deleted;
 }
 
+export async function invalidateWalletReadCaches(
+  userIds: string[],
+): Promise<number> {
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+
+  if (uniqueUserIds.length === 0) {
+    return 0;
+  }
+
+  let deleted = 0;
+
+  for (const userId of uniqueUserIds) {
+    deleted += await redis.del(
+      RedisKeys.WALLET_BALANCE(userId),
+      RedisKeys.RECENT_RECIPIENTS(userId),
+      RedisKeys.DASHBOARD_SUMMARY(userId),
+      RedisKeys.DASHBOARD_FRESHNESS(userId),
+    );
+    deleted += await invalidateCachePattern(
+      RedisKeys.LEDGER_ANALYTICS_PATTERN(userId),
+    );
+    deleted += await invalidateCachePattern(
+      RedisKeys.LEDGER_STATS_PATTERN(userId),
+    );
+  }
+
+  return deleted;
+}

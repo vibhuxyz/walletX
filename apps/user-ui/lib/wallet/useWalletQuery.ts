@@ -104,12 +104,8 @@ export const qk = {
     ["recent-transactions", limit] as const,
 
   ledgerRoot: ["ledger"] as const,
-  ledgerList: (
-    page: number,
-    categoryFilter: string,
-    statusFilter: string,
-    search: string,
-  ) => ["ledger", "list", page, categoryFilter, statusFilter, search] as const,
+  ledgerList: (page: number, categoryFilter: string, statusFilter: string) =>
+    ["ledger", "list", page, categoryFilter, statusFilter] as const,
   ledgerStats: ["ledger", "stats", "summary"] as const,
   ledgerAnalyticsRoot: ["ledger", "analytics"] as const,
   ledgerAnalytics: (months: number) => ["ledger", "analytics", months] as const,
@@ -238,7 +234,7 @@ function deriveIncomeAndExpenses(stats: LedgerStatistics) {
 export async function fetchDashboardSummary(): Promise<DashboardSummaryData> {
   if (dashboardSummaryEndpointAvailable !== false) {
     try {
-      const { data } = await api.get("/api/v0/wallet/dashboard/summary");
+      const { data } = await api.get("/api/v0/wallet/dashboard");
       dashboardSummaryEndpointAvailable = true;
       return normalizeDashboardSummaryFromBackend(data.data);
     } catch (error) {

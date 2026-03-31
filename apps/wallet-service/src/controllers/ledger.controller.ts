@@ -4,6 +4,20 @@ import type { Request, Response } from "express";
 
 const logger = new Logger("LedgerController");
 
+function applyReadCacheHeaders(
+  res: Response,
+  options: {
+    cacheControl: string;
+    startedAt: number;
+  },
+) {
+  res.setHeader("Cache-Control", options.cacheControl);
+  res.setHeader(
+    "Server-Timing",
+    `app;desc="ledger-read";dur=${(Date.now() - options.startedAt).toFixed(1)}`,
+  );
+}
+
 /**
  * Get user's ledger entries
  */
@@ -75,6 +89,7 @@ export const getLedgerStatistics = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
+  const startedAt = Date.now();
   const userId = req.user!.userId;
   const { startDate, endDate } = req.query;
 
@@ -85,6 +100,11 @@ export const getLedgerStatistics = async (
     startDate ? new Date(startDate as string) : undefined,
     endDate ? new Date(endDate as string) : undefined,
   );
+
+  applyReadCacheHeaders(res, {
+    cacheControl: "private, max-age=0, stale-while-revalidate=15",
+    startedAt,
+  });
 
   res.json({
     success: true,
@@ -103,6 +123,7 @@ export const getLedgerAnalytics = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
+  const startedAt = Date.now();
   const userId = req.user!.userId;
   const monthsRaw = req.query.months;
 
@@ -114,6 +135,11 @@ export const getLedgerAnalytics = async (
   logger.debug("Fetching ledger analytics", { userId, months });
 
   const analytics = await ledgerService.getLedgerAnalytics(userId, months);
+
+  applyReadCacheHeaders(res, {
+    cacheControl: "private, max-age=0, stale-while-revalidate=30",
+    startedAt,
+  });
 
   res.json({
     success: true,

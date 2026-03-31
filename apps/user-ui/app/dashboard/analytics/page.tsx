@@ -1,26 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  Area,
-  AreaChart,
-} from "recharts";
-
+import { Card, CardContent } from "@/components/ui/card";
+import { AnalyticsChartCardSkeleton } from "@/components/skeleton/DashboardRouteSkeleton";
 import { getLedgerAnalytics } from "@/lib/api/ledgerApi";
 import { formatCurrency } from "@/lib/constants";
 import { qk } from "@/lib/wallet/useWalletQuery";
@@ -29,14 +14,38 @@ import { TrendingUp, TrendingDown, DollarSign, Loader2 } from "lucide-react";
 const ANALYTICS_MONTHS = 6;
 const ANALYTICS_QUERY_KEY = qk.ledgerAnalytics(ANALYTICS_MONTHS);
 
-const PIE_COLORS = [
-  "oklch(0.45 0.18 260)",
-  "oklch(0.55 0.20 160)",
-  "oklch(0.65 0.16 50)",
-  "oklch(0.58 0.22 310)",
-  "oklch(0.62 0.18 30)",
-  "oklch(0.50 0.15 200)",
-];
+const IncomeExpenseChartCard = dynamic(
+  () =>
+    import("@/components/dashboard/analytics/income-expense-chart-card").then(
+      (mod) => mod.IncomeExpenseChartCard,
+    ),
+  {
+    ssr: false,
+    loading: () => <AnalyticsChartCardSkeleton title="Income vs Expenses" />,
+  },
+);
+
+const SpendingCategoryChartCard = dynamic(
+  () =>
+    import("@/components/dashboard/analytics/spending-category-chart-card").then(
+      (mod) => mod.SpendingCategoryChartCard,
+    ),
+  {
+    ssr: false,
+    loading: () => <AnalyticsChartCardSkeleton title="Spending by Category" />,
+  },
+);
+
+const MonthlyTrendChartCard = dynamic(
+  () =>
+    import("@/components/dashboard/analytics/monthly-trend-chart-card").then(
+      (mod) => mod.MonthlyTrendChartCard,
+    ),
+  {
+    ssr: false,
+    loading: () => <AnalyticsChartCardSkeleton title="Monthly Trend" />,
+  },
+);
 
 const fadeUp = {
   initial: { opacity: 0, y: 20 },
@@ -216,217 +225,23 @@ export default function AnalyticsPage() {
       </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Income vs Expense bar chart */}
         <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
-          <Card className="border-border/40 bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Income vs Expenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="oklch(0.90 0.005 260)"
-                    />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fontSize: 12, fill: "oklch(0.50 0.02 260)" }}
-                      axisLine={{ stroke: "oklch(0.88 0.005 260)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: "oklch(0.50 0.02 260)" }}
-                      axisLine={{ stroke: "oklch(0.88 0.005 260)" }}
-                    />
-                    <Tooltip
-                      formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "1px solid oklch(0.90 0.005 260)",
-                        backgroundColor: "oklch(1.00 0 0)",
-                        color: "oklch(0.20 0.02 260)",
-                        boxShadow: "0 4px 12px oklch(0.50 0 0 / 0.1)",
-                      }}
-                      labelStyle={{ color: "oklch(0.50 0.02 260)" }}
-                    />
-                    <Bar
-                      dataKey="income"
-                      name="Income"
-                      fill="oklch(0.45 0.18 260)"
-                      radius={[6, 6, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="expense"
-                      name="Expense"
-                      fill="oklch(0.55 0.20 160)"
-                      radius={[6, 6, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <IncomeExpenseChartCard data={monthlyData} />
         </motion.div>
 
-        {/* Spending by category pie chart */}
         <motion.div {...fadeUp} transition={{ delay: 0.2 }}>
-          <Card className="border-border/40 bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Spending by Category</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {spendingCategories.length === 0 || totalSpending <= 0 ? (
-                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
-                  No expense data available yet.
-                </div>
-              ) : (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={spendingCategories}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        dataKey="amount"
-                        nameKey="name"
-                        paddingAngle={3}
-                        strokeWidth={0}
-                      >
-                        {spendingCategories.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={PIE_COLORS[i % PIE_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
-                        contentStyle={{
-                          borderRadius: "12px",
-                          border: "1px solid oklch(0.90 0.005 260)",
-                          backgroundColor: "oklch(1.00 0 0)",
-                          color: "oklch(0.20 0.02 260)",
-                          boxShadow: "0 4px 12px oklch(0.50 0 0 / 0.1)",
-                        }}
-                      />
-                      <Legend
-                        wrapperStyle={{ fontSize: "11px" }}
-                        formatter={(value: string) => (
-                          <span style={{ color: "oklch(0.45 0.02 260)" }}>
-                            {value}
-                          </span>
-                        )}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SpendingCategoryChartCard
+            data={spendingCategories}
+            totalSpending={totalSpending}
+          />
         </motion.div>
 
-        {/* Trend area chart */}
         <motion.div
           {...fadeUp}
           transition={{ delay: 0.3 }}
           className="lg:col-span-2"
         >
-          <Card className="border-border/40 bg-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Monthly Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={monthlyData}>
-                    <defs>
-                      <linearGradient
-                        id="incomeGrad"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="oklch(0.45 0.18 260)"
-                          stopOpacity={0.2}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="oklch(0.45 0.18 260)"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                      <linearGradient
-                        id="expenseGrad"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="oklch(0.55 0.20 160)"
-                          stopOpacity={0.2}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="oklch(0.55 0.20 160)"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="oklch(0.90 0.005 260)"
-                    />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fontSize: 12, fill: "oklch(0.50 0.02 260)" }}
-                      axisLine={{ stroke: "oklch(0.88 0.005 260)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: "oklch(0.50 0.02 260)" }}
-                      axisLine={{ stroke: "oklch(0.88 0.005 260)" }}
-                    />
-                    <Tooltip
-                      formatter={(value: number) => formatCurrency(value)}
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "1px solid oklch(0.90 0.005 260)",
-                        backgroundColor: "oklch(1.00 0 0)",
-                        color: "oklch(0.20 0.02 260)",
-                        boxShadow: "0 4px 12px oklch(0.50 0 0 / 0.1)",
-                      }}
-                      labelStyle={{ color: "oklch(0.50 0.02 260)" }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="income"
-                      name="Income"
-                      stroke="oklch(0.45 0.18 260)"
-                      fill="url(#incomeGrad)"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: "oklch(0.45 0.18 260)" }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="expense"
-                      name="Expense"
-                      stroke="oklch(0.55 0.20 160)"
-                      fill="url(#expenseGrad)"
-                      strokeWidth={2}
-                      dot={{ r: 4, fill: "oklch(0.55 0.20 160)" }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <MonthlyTrendChartCard data={monthlyData} />
         </motion.div>
       </div>
     </motion.div>

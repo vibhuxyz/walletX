@@ -1,6 +1,6 @@
 import { prismaPostgres } from "@repo/db-postgres";
 import { ApiError, Currency, formatLedgerEntry, Logger } from "@repo/libs";
-import { redis, RedisKeys, RedisTTL } from "@repo/redis";
+import { cacheGetOrSet, RedisKeys, RedisTTL } from "@repo/redis";
 import { ledgerRepository } from "../repositories/ledger.repository.js";
 
 const logger = new Logger("LedgerService");
@@ -145,7 +145,10 @@ export async function getUserLedgerEntries(
       OR: [
         { createdAt: { lt: cursorToken.createdAt } },
         {
-          AND: [{ createdAt: cursorToken.createdAt }, { id: { lt: cursorToken.id } }],
+          AND: [
+            { createdAt: cursorToken.createdAt },
+            { id: { lt: cursorToken.id } },
+          ],
         },
       ],
     };
@@ -171,7 +174,9 @@ export async function getUserLedgerEntries(
   ]);
 
   const hasMoreByCursor = isCursorMode && fetchedEntries.length > limit;
-  const entries = hasMoreByCursor ? fetchedEntries.slice(0, limit) : fetchedEntries;
+  const entries = hasMoreByCursor
+    ? fetchedEntries.slice(0, limit)
+    : fetchedEntries;
 
   const staleRequestPaymentEntryIds = entries
     .filter(
@@ -255,13 +260,15 @@ export async function getLedgerEntryDetails(userId: string, entryId: string) {
 /**
  * Get ledger statistics
  */
-export async function getLedgerStatistics(
+function toLedgerStatsCacheSegment(date?: Date) {
+  return date ? date.toISOString() : "all";
+}
+
+function buildLedgerStatsWhere(
   userId: string,
   startDate?: Date,
   endDate?: Date,
 ) {
-  logger.info("Fetching ledger statistics", { userId, startDate, endDate });
-
   const where: any = { userId };
 
   if (startDate || endDate) {
@@ -270,119 +277,136 @@ export async function getLedgerStatistics(
     if (endDate) where.createdAt.lte = endDate;
   }
 
-  //  Select status field from database
-  const statsGroups = await prismaPostgres.ledgerEntry.groupBy({
-    by: ["entryType", "status"],
-    where,
-    _sum: {
-      amount: true,
-    },
-    _count: true,
+  return where;
+}
+
+export async function getLedgerStatistics(
+  userId: string,
+  startDate?: Date,
+  endDate?: Date,
+) {
+  logger.info("Fetching ledger statistics", { userId, startDate, endDate });
+
+  const cacheKey = RedisKeys.LEDGER_STATS(
+    userId,
+    toLedgerStatsCacheSegment(startDate),
+    toLedgerStatsCacheSegment(endDate),
+  );
+
+  return cacheGetOrSet(cacheKey, RedisTTL.CACHE_LEDGER_STATS, async () => {
+    const where = buildLedgerStatsWhere(userId, startDate, endDate);
+
+    const statsGroups = await prismaPostgres.ledgerEntry.groupBy({
+      by: ["entryType", "status"],
+      where,
+      _sum: {
+        amount: true,
+      },
+      _count: true,
+    });
+
+    const stats = {
+      totalTransactions: 0,
+      topups: {
+        count: 0,
+        totalAmount: BigInt(0),
+        successCount: 0,
+        failedCount: 0,
+      },
+      p2p: {
+        sent: { count: 0, totalAmount: BigInt(0) },
+        received: { count: 0, totalAmount: BigInt(0) },
+      },
+      merchant: {
+        payments: { count: 0, totalAmount: BigInt(0) },
+        refunds: { count: 0, totalAmount: BigInt(0) },
+      },
+      requests: {
+        count: 0,
+        totalAmount: BigInt(0),
+      },
+    };
+
+    statsGroups.forEach((group: any) => {
+      const count = group._count;
+      const amount = group._sum.amount || BigInt(0);
+      const status = group.status;
+      const type = group.entryType;
+
+      stats.totalTransactions += count;
+
+      switch (type) {
+        case "WALLET_TOPUP":
+          stats.topups.count += count;
+          if (status === "SUCCESS") {
+            stats.topups.totalAmount += amount;
+            stats.topups.successCount += count;
+          } else if (status === "FAILED") {
+            stats.topups.failedCount += count;
+          }
+          break;
+
+        case "P2P_SEND":
+          stats.p2p.sent.count += count;
+          stats.p2p.sent.totalAmount += amount;
+          break;
+
+        case "P2P_RECEIVE":
+          stats.p2p.received.count += count;
+          stats.p2p.received.totalAmount += amount;
+          break;
+
+        case "MERCHANT_PAYMENT":
+          stats.merchant.payments.count += count;
+          stats.merchant.payments.totalAmount += amount;
+          break;
+
+        case "MERCHANT_REFUND":
+          stats.merchant.refunds.count += count;
+          stats.merchant.refunds.totalAmount += amount;
+          break;
+
+        case "PAYMENT_REQUEST_PAID":
+          stats.requests.count += count;
+          stats.requests.totalAmount += amount;
+          break;
+      }
+    });
+
+    return {
+      totalTransactions: stats.totalTransactions,
+      topups: {
+        count: stats.topups.count,
+        totalAmount: Currency.toRupees(stats.topups.totalAmount),
+        successCount: stats.topups.successCount,
+        failedCount: stats.topups.failedCount,
+      },
+      p2p: {
+        sent: {
+          count: stats.p2p.sent.count,
+          totalAmount: Currency.toRupees(stats.p2p.sent.totalAmount),
+        },
+        received: {
+          count: stats.p2p.received.count,
+          totalAmount: Currency.toRupees(stats.p2p.received.totalAmount),
+        },
+      },
+      merchant: {
+        payments: {
+          count: stats.merchant.payments.count,
+          totalAmount: Currency.toRupees(stats.merchant.payments.totalAmount),
+        },
+        refunds: {
+          count: stats.merchant.refunds.count,
+          totalAmount: Currency.toRupees(stats.merchant.refunds.totalAmount),
+        },
+      },
+      requests: {
+        count: stats.requests.count,
+        totalAmount: Currency.toRupees(stats.requests.totalAmount),
+      },
+    };
   });
-
-  // Calculate statistics from grouped data
-  const stats = {
-    totalTransactions: 0,
-    topups: {
-      count: 0,
-      totalAmount: BigInt(0),
-      successCount: 0,
-      failedCount: 0,
-    },
-    p2p: {
-      sent: { count: 0, totalAmount: BigInt(0) },
-      received: { count: 0, totalAmount: BigInt(0) },
-    },
-    merchant: {
-      payments: { count: 0, totalAmount: BigInt(0) },
-      refunds: { count: 0, totalAmount: BigInt(0) },
-    },
-    requests: {
-      count: 0,
-      totalAmount: BigInt(0),
-    },
-  };
-
-  statsGroups.forEach((group: any) => {
-    const count = group._count;
-    const amount = group._sum.amount || BigInt(0);
-    const status = group.status;
-    const type = group.entryType;
-
-    stats.totalTransactions += count;
-
-    switch (type) {
-      case "WALLET_TOPUP":
-        stats.topups.count += count;
-        if (status === "SUCCESS") {
-          stats.topups.totalAmount += amount;
-          stats.topups.successCount += count;
-        } else if (status === "FAILED") {
-          stats.topups.failedCount += count;
-        }
-        break;
-
-      case "P2P_SEND":
-        stats.p2p.sent.count += count;
-        stats.p2p.sent.totalAmount += amount;
-        break;
-
-      case "P2P_RECEIVE":
-        stats.p2p.received.count += count;
-        stats.p2p.received.totalAmount += amount;
-        break;
-
-      case "MERCHANT_PAYMENT":
-        stats.merchant.payments.count += count;
-        stats.merchant.payments.totalAmount += amount;
-        break;
-
-      case "MERCHANT_REFUND":
-        stats.merchant.refunds.count += count;
-        stats.merchant.refunds.totalAmount += amount;
-        break;
-
-      case "PAYMENT_REQUEST_PAID":
-        stats.requests.count += count;
-        stats.requests.totalAmount += amount;
-        break;
-    }
-  });
-
-  // Convert BigInt to string for response
-  return {
-    totalTransactions: stats.totalTransactions,
-    topups: {
-      count: stats.topups.count,
-      totalAmount: Currency.toRupees(stats.topups.totalAmount),
-      successCount: stats.topups.successCount,
-      failedCount: stats.topups.failedCount,
-    },
-    p2p: {
-      sent: {
-        count: stats.p2p.sent.count,
-        totalAmount: Currency.toRupees(stats.p2p.sent.totalAmount),
-      },
-      received: {
-        count: stats.p2p.received.count,
-        totalAmount: Currency.toRupees(stats.p2p.received.totalAmount),
-      },
-    },
-    merchant: {
-      payments: {
-        count: stats.merchant.payments.count,
-        totalAmount: Currency.toRupees(stats.merchant.payments.totalAmount),
-      },
-      refunds: {
-        count: stats.merchant.refunds.count,
-        totalAmount: Currency.toRupees(stats.merchant.refunds.totalAmount),
-      },
-    },
-    requests: {
-      count: stats.requests.count,
-      totalAmount: Currency.toRupees(stats.requests.totalAmount),
-    },
-  };
 }
 
 const INCOME_ENTRY_TYPES = new Set([
@@ -401,6 +425,13 @@ const SPENDING_LABELS: Record<string, string> = {
   P2P_SEND: "Transfers",
   MERCHANT_PAYMENT: "Merchant Payments",
   PAYMENT_REQUEST_PAID: "Request Payments",
+};
+
+type LedgerAnalyticsEntry = {
+  entryType: string;
+  amount: bigint;
+  createdAt: Date;
+  metadata: unknown;
 };
 
 function toMonthKey(date: Date) {
@@ -423,32 +454,14 @@ function monthLabelFromKey(monthKey: string) {
 
 function addMonths(date: Date, delta: number) {
   return new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth() + delta,
-      1,
-      0,
-      0,
-      0,
-      0,
-    ),
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + delta, 1, 0, 0, 0, 0),
   );
 }
 
-/**
- * Get analytics summary for dashboard charts.
- * Uses only SUCCESS ledger entries to avoid counting failed/pending attempts.
- */
-export async function getLedgerAnalytics(userId: string, months: number = 6) {
+function buildLedgerAnalytics(entries: LedgerAnalyticsEntry[], months: number) {
   const safeMonths = Number.isFinite(months)
     ? Math.max(1, Math.min(24, Math.floor(months)))
     : 6;
-  const cacheKey = RedisKeys.LEDGER_ANALYTICS(userId, safeMonths);
-  const cached = await redis.get(cacheKey);
-
-  if (cached) {
-    return JSON.parse(cached);
-  }
 
   const now = new Date();
   const currentMonthStart = new Date(
@@ -466,30 +479,6 @@ export async function getLedgerAnalytics(userId: string, months: number = 6) {
       999,
     ),
   );
-
-  logger.info("Fetching ledger analytics", {
-    userId,
-    months: safeMonths,
-    startDate,
-    endDate,
-  });
-
-  const entries = await prismaPostgres.ledgerEntry.findMany({
-    where: {
-      userId,
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-      status: "SUCCESS",
-    },
-    select: {
-      entryType: true,
-      amount: true,
-      createdAt: true,
-      metadata: true,
-    },
-  });
 
   const monthlyMap = new Map<
     string,
@@ -550,12 +539,14 @@ export async function getLedgerAnalytics(userId: string, months: number = 6) {
   const averageIncome = totalIncome / BigInt(safeMonths);
   const averageExpenses = totalExpenses / BigInt(safeMonths);
 
-  const monthly = Array.from(monthlyMap.entries()).map(([monthKey, values]) => ({
-    month: monthLabelFromKey(monthKey),
-    income: Currency.toRupees(values.income),
-    expense: Currency.toRupees(values.expense),
-    net: Currency.toRupees(values.net),
-  }));
+  const monthly = Array.from(monthlyMap.entries()).map(
+    ([monthKey, values]) => ({
+      month: monthLabelFromKey(monthKey),
+      income: Currency.toRupees(values.income),
+      expense: Currency.toRupees(values.expense),
+      net: Currency.toRupees(values.net),
+    }),
+  );
 
   const expenseTotalFloat = parseFloat(Currency.toRupees(totalExpenses));
   const categories = Array.from(categoryAmountMap.entries())
@@ -576,7 +567,7 @@ export async function getLedgerAnalytics(userId: string, months: number = 6) {
     })
     .sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
 
-  const response = {
+  return {
     period: {
       months: safeMonths,
       startDate: startDate.toISOString(),
@@ -596,13 +587,60 @@ export async function getLedgerAnalytics(userId: string, months: number = 6) {
       successfulTransactions: entries.length,
     },
   };
+}
 
-  await redis.set(
-    cacheKey,
-    JSON.stringify(response),
-    "EX",
-    RedisTTL.CACHE_LEDGER_ANALYTICS,
-  );
+/**
+ * Get analytics summary for dashboard charts.
+ * Uses only SUCCESS ledger entries to avoid counting failed/pending attempts.
+ */
+export async function getLedgerAnalytics(userId: string, months: number = 6) {
+  const safeMonths = Number.isFinite(months)
+    ? Math.max(1, Math.min(24, Math.floor(months)))
+    : 6;
+  const cacheKey = RedisKeys.LEDGER_ANALYTICS(userId, safeMonths);
 
-  return response;
+  return cacheGetOrSet(cacheKey, RedisTTL.CACHE_LEDGER_ANALYTICS, async () => {
+    const now = new Date();
+    const currentMonthStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0),
+    );
+    const startDate = addMonths(currentMonthStart, -(safeMonths - 1));
+    const endDate = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
+
+    logger.info("Fetching ledger analytics", {
+      userId,
+      months: safeMonths,
+      startDate,
+      endDate,
+    });
+
+    const entries = await prismaPostgres.ledgerEntry.findMany({
+      where: {
+        userId,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+        status: "SUCCESS",
+      },
+      select: {
+        entryType: true,
+        amount: true,
+        createdAt: true,
+        metadata: true,
+      },
+    });
+
+    return buildLedgerAnalytics(entries, safeMonths);
+  });
 }

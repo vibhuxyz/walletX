@@ -1,6 +1,6 @@
 import { prismaPostgres } from "@repo/db-postgres";
 import { ApiError, Logger } from "@repo/libs";
-import { redis, RedisKeys } from "@repo/redis";
+import { invalidateWalletReadCaches } from "@repo/redis";
 import { ActivateWalletInput } from "@repo/zod-schema";
 import { nanoid } from "nanoid";
 
@@ -75,11 +75,7 @@ export const submitKyc = async (userId: string, data: ActivateWalletInput) => {
     });
   });
 
-  await Promise.all([
-    redis.del(RedisKeys.WALLET_BALANCE(userId)),
-    redis.del(RedisKeys.DASHBOARD_SUMMARY(userId)),
-    redis.del(RedisKeys.DASHBOARD_FRESHNESS(userId)),
-  ]);
+  await invalidateWalletReadCaches([userId]);
 
   logger.info(
     "KYC Submited and Wallet status is pending waithing to approval",

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useDeferredValue } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -30,9 +31,18 @@ import {
   type LedgerEntry,
 } from "@/lib/api/ledgerApi";
 import { qk } from "@/lib/wallet/useWalletQuery";
-import { TransactionDetailsDrawer } from "@/components/dashboard/transaction-details-drawer";
 import StatsSkeleton from "@/components/skeleton/StatsSkeleton";
 import ListSkeleton from "@/components/skeleton/ListSkeleton";
+
+const TransactionDetailsDrawer = dynamic(
+  () =>
+    import("@/components/dashboard/transaction-details-drawer").then(
+      (mod) => mod.TransactionDetailsDrawer,
+    ),
+  {
+    loading: () => null,
+  },
+);
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -59,6 +69,7 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTransaction, setSelectedTransaction] =
     useState<LedgerEntry | null>(null);
+  const deferredSearch = useDeferredValue(search);
 
   //  Fetch Ledger Entries
   const {
@@ -66,7 +77,7 @@ export default function TransactionsPage() {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: qk.ledgerList(currentPage, categoryFilter, statusFilter, search),
+    queryKey: qk.ledgerList(currentPage, categoryFilter, statusFilter),
     queryFn: () =>
       getLedgerEntries({
         limit: ITEMS_PER_PAGE,
@@ -94,9 +105,9 @@ export default function TransactionsPage() {
 
   // Client-side search filtering
   const filtered = useMemo(() => {
-    if (!search) return entries;
+    if (!deferredSearch) return entries;
 
-    const q = search.toLowerCase();
+    const q = deferredSearch.toLowerCase();
     return entries.filter((tx) => {
       const title = tx.title.toLowerCase();
       const subtitle = tx.subtitle.toLowerCase();
@@ -113,7 +124,7 @@ export default function TransactionsPage() {
         email.includes(q)
       );
     });
-  }, [entries, search]);
+  }, [entries, deferredSearch]);
 
   //  Grouping
   const grouped = useMemo(() => {
@@ -276,6 +287,11 @@ export default function TransactionsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search !== deferredSearch && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Updating results...
+              </p>
+            )}
           </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-40 bg-secondary/50 border-border/30">
@@ -339,7 +355,7 @@ export default function TransactionsPage() {
                     </div>
 
                     <div className="flex flex-col gap-0.5">
-                      {txs.map((tx, i) => {
+                      {txs.map((tx) => {
                         //  Status-based styling logic
                         const getAmountStyle = () => {
                           if (tx.status === "FAILED") {
@@ -370,13 +386,11 @@ export default function TransactionsPage() {
                         const amountStyle = getAmountStyle();
 
                         return (
-                          <motion.div
+                          <button
                             key={tx.transactionId}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.03 }}
+                            type="button"
                             onClick={() => setSelectedTransaction(tx)}
-                            className="flex items-center gap-4 rounded-xl px-4 py-3.5 transition-colors hover:bg-secondary/40 cursor-pointer"
+                            className="flex w-full items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-colors hover:bg-secondary/40"
                           >
                             {/* Avatar with status */}
                             <TxAvatar
@@ -436,7 +450,7 @@ export default function TransactionsPage() {
                                 Bal: ₹{tx.balanceAfter}
                               </p>
                             </div>
-                          </motion.div>
+                          </button>
                         );
                       })}
                     </div>
@@ -514,10 +528,12 @@ export default function TransactionsPage() {
       </motion.div>
 
       {/* Transaction Details Drawer */}
-      <TransactionDetailsDrawer
-        transaction={selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-      />
+      {selectedTransaction && (
+        <TransactionDetailsDrawer
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
+      )}
     </>
   );
 }

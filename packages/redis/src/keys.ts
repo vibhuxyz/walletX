@@ -42,6 +42,12 @@ export const RedisKeys = {
     `cache:ledger:analytics:${userId}:${months}`,
   LEDGER_ANALYTICS_PATTERN: (userId: string) =>
     `cache:ledger:analytics:${userId}:*`,
+  LEDGER_STATS: (
+    userId: string,
+    startDateKey: string = "all",
+    endDateKey: string = "all",
+  ) => `cache:ledger:stats:${userId}:${startDateKey}:${endDateKey}`,
+  LEDGER_STATS_PATTERN: (userId: string) => `cache:ledger:stats:${userId}:*`,
   RECENT_RECIPIENTS: (userId: string) => `cache:recent_recipients:${userId}`,
   DASHBOARD_SUMMARY: (userId: string) => `cache:dashboard:summary:${userId}`,
   DASHBOARD_FRESHNESS: (userId: string) =>
@@ -89,6 +95,7 @@ export const RedisTTL = {
   CACHE_PROFILE: 600, // 10 minutes
   CACHE_DEVICE: 86400, // 24 hours
   CACHE_LEDGER_ANALYTICS: 30, // 30 seconds
+  CACHE_LEDGER_STATS: 15, // 15 seconds
   CACHE_RECENT_RECIPIENTS: 60, // 60 seconds
   CACHE_DASHBOARD_SUMMARY: 15, // 15 seconds
   CACHE_DASHBOARD_FRESHNESS: 120, // 2 minutes

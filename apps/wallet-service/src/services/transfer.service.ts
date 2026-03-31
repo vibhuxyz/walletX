@@ -17,7 +17,7 @@ import {
 import { Exchanges, RoutingKeys } from "@repo/rabbitmq";
 import { nanoid } from "nanoid";
 import {
-  invalidateCachePattern,
+  invalidateWalletReadCaches,
   redis,
   RedisKeys,
   withLock,
@@ -29,15 +29,7 @@ const invalidateTransferReadCaches = async (
   senderId: string,
   recipientId: string,
 ) => {
-  await Promise.all([
-    redis.del(RedisKeys.WALLET_BALANCE(senderId)),
-    redis.del(RedisKeys.WALLET_BALANCE(recipientId)),
-    redis.del(RedisKeys.DASHBOARD_SUMMARY(senderId)),
-    redis.del(RedisKeys.DASHBOARD_SUMMARY(recipientId)),
-    redis.del(RedisKeys.RECENT_RECIPIENTS(senderId)),
-    invalidateCachePattern(RedisKeys.LEDGER_ANALYTICS_PATTERN(senderId)),
-    invalidateCachePattern(RedisKeys.LEDGER_ANALYTICS_PATTERN(recipientId)),
-  ]);
+  await invalidateWalletReadCaches([senderId, recipientId]);
 };
 
 // ₹500 in paise —> PIN required only above this

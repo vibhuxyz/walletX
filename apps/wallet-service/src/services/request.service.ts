@@ -9,18 +9,40 @@ import {
 } from "@repo/libs";
 import { ENV } from "@repo/config";
 import { Exchanges, RoutingKeys } from "@repo/rabbitmq";
-import { invalidateCachePattern, redis, RedisKeys } from "@repo/redis";
-import { withLock } from "@repo/redis";
+import { invalidateWalletReadCaches, withLock } from "@repo/redis";
 import { nanoid } from "nanoid";
 
 const logger = new Logger("RequestService");
 
 const invalidateDashboardCaches = async (userIds: string[]) => {
-  await Promise.all(
-    Array.from(new Set(userIds)).map((userId) =>
-      redis.del(RedisKeys.DASHBOARD_SUMMARY(userId)),
-    ),
-  );
+  await invalidateWalletReadCaches(userIds);
+};
+
+const expireRequestIfNeeded = async (request: {
+  id: string;
+  status: string;
+  expiresAt: Date;
+  requesterId: string;
+  requestedFromId: string;
+}) => {
+  const now = new Date();
+
+  if (request.status !== "PENDING" || request.expiresAt >= now) {
+    return false;
+  }
+
+  await prismaPostgres.paymentRequest.update({
+    where: { id: request.id },
+    data: { status: "EXPIRED" },
+  });
+
+  request.status = "EXPIRED";
+  await invalidateDashboardCaches([
+    request.requesterId,
+    request.requestedFromId,
+  ]);
+
+  return true;
 };
 
 const emitBalanceUpdateTx = async (
@@ -330,14 +352,7 @@ export const getRequestDetails = async (userId: string, requestId: string) => {
   }
 
   // Auto-expire if needed
-  const now = new Date();
-  if (request.status === "PENDING" && request.expiresAt < now) {
-    await prismaPostgres.paymentRequest.update({
-      where: { id: requestId },
-      data: { status: "EXPIRED" },
-    });
-    request.status = "EXPIRED";
-  }
+  await expireRequestIfNeeded(request);
 
   return {
     requestId: request.id,
@@ -402,12 +417,8 @@ export const payRequest = async (
   }
 
   // Check expiry
-  const now = new Date();
-  if (request.expiresAt < now) {
-    await prismaPostgres.paymentRequest.update({
-      where: { id: requestId },
-      data: { status: "EXPIRED" },
-    });
+  const wasExpired = await expireRequestIfNeeded(request);
+  if (wasExpired) {
     throw new ApiError(400, "REQUEST_EXPIRED", "This request has expired");
   }
 
@@ -442,15 +453,7 @@ export const payRequest = async (
   });
 
   // Clear cache
-  await Promise.all([
-    redis.del(RedisKeys.WALLET_BALANCE(userId)),
-    redis.del(RedisKeys.WALLET_BALANCE(request.requesterId)),
-    invalidateCachePattern(RedisKeys.LEDGER_ANALYTICS_PATTERN(userId)),
-    invalidateCachePattern(
-      RedisKeys.LEDGER_ANALYTICS_PATTERN(request.requesterId),
-    ),
-    invalidateDashboardCaches([userId, request.requesterId]),
-  ]);
+  await invalidateDashboardCaches([userId, request.requesterId]);
 
   logger.info("Payment request paid", {
     requestId,
