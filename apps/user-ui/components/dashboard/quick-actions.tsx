@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  Send,
-  Plus,
-  ArrowDownToLine,
-  DollarSign,
-  ArrowUpFromLine,
-} from "lucide-react";
+import { Send, Plus, ArrowUpFromLine } from "lucide-react";
 
 const actions = [
   {
@@ -27,14 +21,7 @@ const actions = [
     iconBg: "bg-chart-2/15",
     iconColor: "text-chart-2",
   },
-  {
-    title: "Top Up",
-    description: "Add funds to wallet",
-    href: "/dashboard/top-up",
-    icon: ArrowDownToLine,
-    iconBg: "bg-primary/15",
-    iconColor: "text-primary",
-  },
+
   {
     title: "Withdraw",
     description: "Move to bank",
@@ -42,14 +29,6 @@ const actions = [
     icon: ArrowUpFromLine,
     iconBg: "bg-destructive/15",
     iconColor: "text-destructive",
-  },
-  {
-    title: "Request",
-    description: "Ask for payment",
-    href: "/dashboard/request-money",
-    icon: DollarSign,
-    iconBg: "bg-warning/15",
-    iconColor: "text-warning",
   },
 ];
 
@@ -69,7 +48,7 @@ export function QuickActions() {
       variants={container}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-2 gap-3 md:grid-cols-5"
+      className="grid grid-cols-2 gap-3 md:grid-cols-3"
     >
       {actions.map((action) => (
         <motion.div key={action.href} variants={item}>

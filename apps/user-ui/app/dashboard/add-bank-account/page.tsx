@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useCallback, useRef, memo, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -120,11 +120,18 @@ function AddBankAccountContent() {
   const bankName = watch("bankName");
   const accountType = watch("accountType");
 
-  // Fetch Banks
-  const { data: banksData, isLoading: banksLoading } = useQuery({
+  // Fetch Banks (near real-time refresh)
+  const {
+    data: banksData,
+    isLoading: banksLoading,
+    refetch: refetchBanks,
+    isFetching: isFetchingBanks,
+  } = useQuery({
     queryKey: ["bank", "list"],
     queryFn: fetchBanks,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 5,
+    refetchInterval: 1000 * 5,
+    refetchOnWindowFocus: true,
   });
   const banks = banksData?.banks ?? [];
 
@@ -217,6 +224,13 @@ function AddBankAccountContent() {
       router.back();
     }
   }, [step, router]);
+
+  // Force-refresh bank list when user returns to step 0
+  useEffect(() => {
+    if (step === 0) {
+      void refetchBanks();
+    }
+  }, [step, refetchBanks]);
 
   const handleResendOtp = useCallback(() => {
     if (!pin) return;
@@ -417,7 +431,16 @@ function AddBankAccountContent() {
                     onValueChange={(v) =>
                       setValue("bankName", v, { shouldValidate: true })
                     }
-                    disabled={banksLoading || initiateMutation.isPending}
+                    disabled={
+                      banksLoading ||
+                      isFetchingBanks ||
+                      initiateMutation.isPending
+                    }
+                    onOpenChange={(open) => {
+                      if (open) {
+                        void refetchBanks();
+                      }
+                    }}
                   >
                     <SelectTrigger
                       className={cn(
@@ -427,7 +450,9 @@ function AddBankAccountContent() {
                     >
                       <SelectValue
                         placeholder={
-                          banksLoading ? "Loading banks…" : "Select your bank"
+                          banksLoading || isFetchingBanks
+                            ? "Refreshing banks…"
+                            : "Select your bank"
                         }
                       />
                     </SelectTrigger>

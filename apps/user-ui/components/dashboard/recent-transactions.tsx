@@ -6,7 +6,22 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TxAvatar } from "./tx-avatar";
-import { formatDate } from "@/lib/constants";
+function formatDateTime(dateString: string): string {
+  return new Date(dateString).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function formatPaymentRef(ref?: string): string {
+  if (!ref) return "—";
+  if (ref.length <= 18) return ref;
+  return `${ref.slice(0, 8)}…${ref.slice(-8)}`;
+}
 import { useRecentTransactions } from "@/lib/wallet/useWalletQuery";
 import TransactionsSkeleton from "../skeleton/TransactionsSkeleton";
 import type { LedgerEntry } from "@/lib/api/ledgerApi";
@@ -97,6 +112,11 @@ export function RecentTransactions() {
                     {/* ✅ Avatar with status prop */}
                     <TxAvatar
                       name={tx.title}
+                      avatarUrl={
+                        tx.isIncoming
+                          ? tx.sender?.avatar || undefined
+                          : tx.recipient?.avatar || undefined
+                      }
                       size="sm"
                       isIncome={isIncoming}
                       status={tx.status}
@@ -106,9 +126,13 @@ export function RecentTransactions() {
                       <p className="truncate text-sm font-semibold text-foreground">
                         {tx.title}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(tx.createdAt)}
-                      </p>
+                      <div className="space-y-0.5 text-xs text-muted-foreground">
+                        <p>{formatDateTime(tx.createdAt)}</p>
+                        <p className="truncate font-mono text-[11px] text-muted-foreground/90">
+                          Payment Ref:{" "}
+                          {formatPaymentRef(tx.referenceId || tx.transactionId)}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-1">

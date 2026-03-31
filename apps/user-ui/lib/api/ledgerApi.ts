@@ -32,12 +32,14 @@ export interface LedgerEntry {
     name: string;
     email: string;
     phone: string;
+    avatar?: string | null;
   };
   recipient?: {
     id: string;
     name: string;
     email: string;
     phone: string;
+    avatar?: string | null;
   };
 
   // Bank details (for topups)

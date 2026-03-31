@@ -63,6 +63,23 @@ function parseAmount(amountStr: string): number {
   return parseFloat(amountStr.replace(/[^0-9.-]+/g, ""));
 }
 
+function formatDateTime(dateString: string): string {
+  return new Date(dateString).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function formatPaymentRef(referenceId: string): string {
+  return referenceId.length > 18
+    ? `${referenceId.slice(0, 8)}…${referenceId.slice(-8)}`
+    : referenceId;
+}
+
 type TransactionListItem =
   | { type: "header"; id: string; date: string }
   | { type: "transaction"; id: string; tx: LedgerEntry };
@@ -451,6 +468,11 @@ export default function TransactionsPage() {
                           >
                             <TxAvatar
                               name={tx.title}
+                              avatarUrl={
+                                tx.isIncoming
+                                  ? tx.sender?.avatar || undefined
+                                  : tx.recipient?.avatar || undefined
+                              }
                               size="md"
                               isIncome={tx.isIncoming}
                               status={tx.status}
@@ -461,11 +483,15 @@ export default function TransactionsPage() {
                                 {tx.title}
                               </p>
                               <div className="mt-0.5 flex flex-col gap-0.5">
-                                <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <span>{tx.subtitle}</span>
-                                  <span className="hidden text-[10px] opacity-50 sm:inline-block">
-                                    • Ref: {tx.referenceId.slice(-8)}
-                                  </span>
+                                <p className="text-xs text-muted-foreground">
+                                  {tx.subtitle}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground/90">
+                                  {formatDateTime(tx.createdAt)}
+                                </p>
+                                <p className="font-mono text-[10px] text-muted-foreground/80">
+                                  Payment Ref:{" "}
+                                  {formatPaymentRef(tx.referenceId)}
                                 </p>
 
                                 {tx.note && (

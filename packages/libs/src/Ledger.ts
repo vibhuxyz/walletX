@@ -22,15 +22,25 @@ export function formatLedgerEntry(entry: any, userId: string) {
       case "WALLET_TOPUP":
         return "Wallet Top-up";
       case "P2P_SEND":
-        return "Sent Money";
+        return entry.relatedUser?.fullName
+          ? `Send to ${entry.relatedUser.fullName}`
+          : "Send Money";
       case "P2P_RECEIVE":
-        return "Received Money";
+        return entry.relatedUser?.fullName
+          ? `Received from ${entry.relatedUser.fullName}`
+          : "Received Money";
       case "MERCHANT_PAYMENT":
-        return "Merchant Payment";
+        return entry.merchant?.businessName
+          ? `Paid to ${entry.merchant.businessName}`
+          : "Merchant Payment";
       case "MERCHANT_REFUND":
-        return "Refund Received";
+        return entry.merchant?.businessName
+          ? `Refund from ${entry.merchant.businessName}`
+          : "Refund Received";
       case "PAYMENT_REQUEST_PAID":
-        return "Request Paid";
+        return entry.relatedUser?.fullName
+          ? `Request paid to ${entry.relatedUser.fullName}`
+          : "Request Paid";
       case "ADMIN_ADJUSTMENT":
         return isWithdrawal ? "Wallet Withdrawal" : "Admin Adjustment";
       default:
@@ -130,6 +140,7 @@ export function formatLedgerEntry(entry: any, userId: string) {
         name: entry.relatedUser.fullName,
         email: entry.relatedUser.email,
         phone: entry.relatedUser.phone,
+        avatar: entry.relatedUser.kycProfile?.selfieUrl ?? null,
       };
     } else if (entry.entryType === "P2P_RECEIVE") {
       formatted.sender = {
@@ -137,6 +148,7 @@ export function formatLedgerEntry(entry: any, userId: string) {
         name: entry.relatedUser.fullName,
         email: entry.relatedUser.email,
         phone: entry.relatedUser.phone,
+        avatar: entry.relatedUser.kycProfile?.selfieUrl ?? null,
       };
     }
   }
@@ -160,7 +172,11 @@ export function formatLedgerEntry(entry: any, userId: string) {
     }
   }
 
-  if (isWithdrawal && entry.metadata?.bankName && entry.metadata?.maskedAccount) {
+  if (
+    isWithdrawal &&
+    entry.metadata?.bankName &&
+    entry.metadata?.maskedAccount
+  ) {
     formatted.bankDetails = {
       bankName: entry.metadata.bankName,
       accountNumber: entry.metadata.maskedAccount,

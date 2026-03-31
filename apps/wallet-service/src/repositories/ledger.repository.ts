@@ -1,11 +1,7 @@
 import { prismaPostgres } from "@repo/db-postgres";
 
 export const ledgerRepository = {
-  findMany: (params: {
-    where: any;
-    take: number;
-    skip: number;
-  }) =>
+  findMany: (params: { where: any; take: number; skip: number }) =>
     prismaPostgres.ledgerEntry.findMany({
       where: params.where,
       include: {
@@ -15,6 +11,11 @@ export const ledgerRepository = {
             fullName: true,
             email: true,
             phone: true,
+            kycProfile: {
+              select: {
+                selfieUrl: true,
+              },
+            },
           },
         },
         merchant: {
@@ -48,6 +49,11 @@ export const ledgerRepository = {
             fullName: true,
             email: true,
             phone: true,
+            kycProfile: {
+              select: {
+                selfieUrl: true,
+              },
+            },
           },
         },
         merchant: {
@@ -73,4 +79,3 @@ export const ledgerRepository = {
       },
     }),
 };
-
