@@ -398,7 +398,7 @@ export default function LoginPage() {
         <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Test Accounts
         </p>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 ">
           {[
             { ...TEST_ACCOUNTS.customer,          label: "Customer (No KYC)",      icon: User,         color: "text-primary bg-primary/10" },
             { ...TEST_ACCOUNTS.verified_customer, label: "Customer (KYC Approved)", icon: ShieldCheck,  color: "text-success bg-success/10" },
