@@ -1,0 +1,16 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "rootDir": "../config/src",
+    "outDir": "../config/dist",
+
+    "declaration": true,
+    "baseUrl": "../config",
+    "noEmit": false,
+  },
+  "include": ["../config/src"],
+  "exclude": ["../config/node_modules", "../config/dist"],
+}

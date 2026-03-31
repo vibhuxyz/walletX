@@ -1,0 +1,21 @@
+{
+  "name": "FineWallet",
+  "short_name": "FineWallet",
+  "description": "Send money instantly, link bank accounts, and manage your finances with FineWallet.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "/og-image.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/og-image.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

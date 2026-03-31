@@ -1,0 +1,65 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/mongo-client"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGO_URL")
+}
+
+model LoginAttempt {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  email      String
+  ip         String
+  deviceId   String
+  deviceName String
+  success    Boolean
+  reason     String?
+  userAgent  String
+  timestamp  DateTime
+
+  @@map("login_attempts")
+}
+
+model EmailVerificationLog {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  email      String
+  ip         String
+  deviceId   String
+  success    Boolean
+  otpSentAt  DateTime
+  verifiedAt DateTime?
+  timestamp  DateTime
+
+  @@map("email_verifications")
+}
+
+model DeviceVerificationLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String
+  deviceId   String
+  ip         String
+  action     String
+  deviceName String
+  timestamp  DateTime
+
+  @@map("device_verifications")
+}
+
+model ApiRequestLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  requestId  String
+  method     String
+  path       String
+  statusCode Int
+  duration   Int
+  userId     String?
+  ip         String
+  userAgent  String?
+  timestamp  DateTime
+
+  @@map("api_requests")
+}

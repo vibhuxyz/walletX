@@ -1,0 +1,46 @@
+export const Exchanges = {
+  NOTIFICATIONS: "notifications",
+  WALLET_EVENTS: "wallet.events",
+  BANK_EVENTS: "bank.events",
+  BANK_DEBIT_SUCCESS: "bank.debit.success",
+  BANK_DEBIT_FAILED: "bank.debit.failed",
+  REALTIME_EVENTS: "realtime_events",
+  DLX: "wallet.dlx",
+} as const;
+
+export const Queues = {
+  EMAIL: "email-queue",
+  SMS: "sms-queue",
+  BANK_DEBIT_SUCCESS: "bank-debit-success-queue",
+  BANK_DEBIT_FAILED: "bank-debit-failed-queue",
+  REALTIME_TRANSACTION: "realtime-transaction-queue",
+  REALTIME_BALANCE: "realtime-balance-queue",
+  MERCHANT_PAYMENT: "merchant-payment-queue",
+  SETTLEMENT: "settlement-queue",
+  EMAIL_DLQ: "email-queue.dlq",
+  BANK_DEBIT_SUCCESS_DLQ: "bank-debit-success-queue.dlq",
+  BANK_DEBIT_FAILED_DLQ: "bank-debit-failed-queue.dlq",
+  REALTIME_TRANSACTION_DLQ: "realtime-transaction-queue.dlq",
+  REALTIME_BALANCE_DLQ: "realtime-balance-queue.dlq",
+  MERCHANT_PAYMENT_DLQ: "merchant-payment-queue.dlq",
+  SETTLEMENT_DLQ: "settlement-queue.dlq",
+  DLQ_ALERTS: "dlq-alerts-queue",
+} as const;
+
+export const RoutingKeys = {
+  EMAIL_TOPUP_OTP: "email.topup.otp",
+  EMAIL_VERIFICATION: "email.verification",
+  EMAIL_LOGIN_OTP: "email.login.otp",
+  EMAIL_BANK_LINK: "email.bank.link",
+  EMAIL_PASSWORD_RESET: "email.password.reset",
+  EMAIL_PIN_RESET: "email.pin.reset",
+  EMAIL_ACCOUNT_DELETE: "email.account.delete",
+  SMS_OTP: "sms.otp",
+  BANK_DEBIT_SUCCESS: "bank.debit.success",
+  BANK_DEBIT_FAILED: "bank.debit.failed",
+  WALLET_TOPUP_SUCCESS: "wallet.topup.success",
+  MERCHANT_PAYMENT_SUCCESS: "merchant.payment.success",
+  REALTIME_TRANSACTION: "realtime.transaction",
+  REALTIME_BALANCE: "realtime.balance",
+  DLQ_ALERT: "dlq.alert",
+} as const;

@@ -1,0 +1,33 @@
+{
+  "name": "@repo/worker-service",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@repo/db-postgres": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@repo/redis": "workspace:*",
+    "@repo/rabbitmq": "workspace:*",
+    "@repo/config": "workspace:*",
+    "@repo/libs": "workspace:*",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/nodemailer": "^7.0.10",
+    "nanoid": "^5.1.6",
+    "nodemailer": "^8.0.1"
+  }
+}

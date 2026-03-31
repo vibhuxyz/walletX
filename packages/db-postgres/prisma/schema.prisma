@@ -1,0 +1,690 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id String @id @default(nanoid(21))
+
+  email    String @unique
+  phone    String @unique
+  fullName String
+
+  hashedPassword String
+  hashedPin      String?
+
+  role UserRole
+
+  isEmailVerified Boolean @default(false)
+  isActive        Boolean @default(true)
+
+  lastLoginAt DateTime?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  wallet               Wallet?
+  merchant             Merchant?
+  bankAdmin            BankAdmin?
+  trustedDevices       TrustedDevice[]
+  ledgerEntries        LedgerEntry[]
+  sentTransfers        P2PTransfer[]    @relation("SentTransfers")
+  receivedTransfers    P2PTransfer[]    @relation("ReceivedTransfers")
+  paymentOrders        PaymentOrder[]
+  sentRequests         PaymentRequest[] @relation("SentRequests")
+  receivedRequests     PaymentRequest[] @relation("ReceivedRequests")
+  kycProfile           KycProfile?
+  relatedLedgerEntries LedgerEntry[]    @relation("RelatedUserLedger")
+  bankAccounts         BankAccount[]
+
+  @@index([email])
+  @@index([phone])
+  @@index([role, isActive])
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  MERCHANT
+  BANK_ADMIN
+  SUPER_ADMIN
+}
+
+model TrustedDevice {
+  id String @id @default(nanoid(21))
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deviceId   String
+  deviceName String
+  ipAddress  String
+  isTrusted  Boolean @default(false)
+
+  lastUsedAt DateTime @default(now())
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  @@unique([userId, deviceId])
+  @@index([userId, isTrusted])
+  @@map("trusted_devices")
+}
+
+// ============================================
+// WALLET
+// ============================================
+
+model Wallet {
+  id String @id @default(nanoid(21))
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  balance BigInt @default(0)
+
+  status   WalletStatus @default(PENDING_PIN)
+  isFrozen Boolean      @default(false)
+
+  qrCode String @unique
+
+  version Int @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([userId])
+  @@index([status, isFrozen])
+  @@index([qrCode])
+  @@map("wallets")
+}
+
+enum WalletStatus {
+  PENDING_PIN
+  PENDING_KYC
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+model KycProfile {
+  id String @id @default(nanoid(21))
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  walletId String @unique
+
+  fullName String
+  dob      DateTime @db.Date
+
+  address Json
+
+  // Changed: Replaced 'panNumber' with generic ID fields
+  idType   IdType // Enum: PAN, AADHAAR, PASSPORT
+  idNumber String? // Optional (user might upload image only)
+
+  // URL fields to match Zod Schema
+  idFrontUrl String?
+  idBackUrl  String?
+  selfieUrl  String?
+
+  idFrontImage String?
+  idBackImage  String?
+  selfieImage  String?
+
+  status KycStatus @default(PENDING)
+
+  verifiedAt     DateTime? @db.Timestamptz
+  rejectedReason String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([userId])
+  @@index([status])
+  @@map("kyc_profiles")
+}
+
+enum IdType {
+  PAN
+  AADHAAR
+  PASSPORT
+}
+
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================
+// LEDGER
+// ============================================
+//
+
+enum LedgerStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum LedgerEntryType {
+  WALLET_TOPUP
+  P2P_SEND
+  P2P_RECEIVE
+  MERCHANT_PAYMENT
+  MERCHANT_REFUND
+  PAYMENT_REQUEST_PAID
+  ADMIN_ADJUSTMENT
+}
+
+model LedgerEntry {
+  id String @id @default(nanoid(21))
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  referenceId String @unique
+
+  entryType LedgerEntryType
+
+  amount BigInt
+
+  balanceBefore BigInt
+  balanceAfter  BigInt
+
+  status LedgerStatus @default(PENDING)
+
+  description String
+  notes       String?
+
+  relatedUserId String?
+  relatedUser   User?          @relation("RelatedUserLedger", fields: [relatedUserId], references: [id])
+  orderId       String?
+  order         PaymentOrder[]
+
+  merchantId String?
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
+
+  metadata Json?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, entryType])
+  @@index([userId, entryType, createdAt(sort: Desc)])
+  @@index([userId, status, createdAt(sort: Desc)])
+  @@index([referenceId])
+  @@index([relatedUserId])
+  @@index([status])
+  @@index([orderId])
+  @@index([createdAt(sort: Desc)])
+  @@map("ledger_entries")
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+model OutboxEvent {
+  id String @id @default(nanoid(21))
+
+  exchange   String
+  routingKey String @map("routing_key")
+  payload    Json
+
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now()) @map("available_at") @db.Timestamptz
+  publishedAt DateTime?    @map("published_at") @db.Timestamptz
+  lastError   String?      @map("last_error")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status, availableAt])
+  @@index([createdAt(sort: Desc)])
+  @@map("outbox_events")
+}
+
+// ============================================
+// IDEMPOTENCY
+// ============================================
+
+model IdempotencyKey {
+  id String @id @default(nanoid(21))
+
+  key String @unique
+
+  userId   String
+  endpoint String
+
+  requestHash String
+
+  responseStatus Int
+  responseBody   Json
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  expiresAt DateTime @db.Timestamptz
+
+  @@index([key])
+  @@index([userId, endpoint])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
+
+// ============================================
+// P2P TRANSFERS
+// ============================================
+
+model P2PTransfer {
+  id String @id @default(nanoid(21))
+
+  senderId String
+  sender   User   @relation("SentTransfers", fields: [senderId], references: [id])
+
+  recipientId String
+  recipient   User   @relation("ReceivedTransfers", fields: [recipientId], references: [id])
+
+  amount BigInt
+
+  note String?
+
+  status TransferStatus @default(SUCCESS)
+
+  senderLedgerId    String @unique
+  recipientLedgerId String @unique
+
+  idempotencyKey String @unique
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([senderId, createdAt(sort: Desc)])
+  @@index([senderId, recipientId, createdAt(sort: Desc)])
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([recipientId, senderId, createdAt(sort: Desc)])
+  @@index([idempotencyKey])
+  @@map("p2p_transfers")
+}
+
+enum TransferStatus {
+  SUCCESS
+  FAILED
+  REVERSED
+}
+
+// ============================================
+// PAYMENT REQUESTS
+// ============================================
+
+model PaymentRequest {
+  id String @id @default(nanoid(21))
+
+  requesterId String
+  requester   User   @relation("SentRequests", fields: [requesterId], references: [id])
+
+  requestedFromId String
+  requestedFrom   User   @relation("ReceivedRequests", fields: [requestedFromId], references: [id])
+
+  amount BigInt
+
+  reason String?
+
+  status PaymentRequestStatus @default(PENDING)
+
+  transferId String? @unique
+
+  expiresAt DateTime @db.Timestamptz
+
+  respondedAt DateTime? @db.Timestamptz
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([requesterId, status])
+  @@index([requesterId, status, createdAt(sort: Desc)])
+  @@index([requesterId, createdAt(sort: Desc)])
+  @@index([requestedFromId, status])
+  @@index([requestedFromId, status, createdAt(sort: Desc)])
+  @@index([requestedFromId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("payment_requests")
+}
+
+enum PaymentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+// ============================================
+// TOPUP ORDERS
+// ============================================
+
+model PaymentOrder {
+  id String @id @default(nanoid(21))
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  accountId String
+  account   BankAccount @relation(fields: [accountId], references: [id])
+
+  amount BigInt
+
+  status OrderStatus @default(INITIATED)
+
+  failureReason String?
+  failureCode   String?
+
+  idempotencyKey String @unique
+
+  ledgerId String?      @unique
+  ledger   LedgerEntry? @relation(fields: [ledgerId], references: [id])
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([userId, status])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([idempotencyKey])
+  @@index([status])
+  @@map("payment_orders")
+}
+
+enum OrderStatus {
+  PROCESSING
+  INITIATED
+  PENDING
+  SUCCESS
+  FAILED
+  EXPIRED
+}
+
+// ============================================
+// BANK ACCOUNTS
+// ============================================
+
+model BankAccount {
+  id String @id @default(nanoid(21))
+
+  accountNumber String
+  bankName      String
+  accountHolder String
+  email         String
+  phone         String
+  balance       BigInt @default(0)
+
+  accountType BankAccountType @default(SAVINGS)
+  ifscCode    String
+  branch      String
+
+  status       BankAccountStatus @default(PENDING_APPROVAL)
+  isFrozen     Boolean           @default(false)
+  freezeReason String?
+
+  approvedBy String?
+  approvedAt DateTime? @db.Timestamptz
+
+  version Int @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  linkedWallets LinkedBankAccount[]
+  approvals     BankAccountApproval[]
+  paymentOrders PaymentOrder[]
+  userId        String
+  user          User                  @relation(fields: [userId], references: [id])
+
+  @@unique([accountNumber, bankName])
+  @@index([userId])
+  @@index([status])
+  @@index([email, bankName])
+  @@map("bank_accounts")
+}
+
+enum BankAccountType {
+  SAVINGS
+  CURRENT
+}
+
+enum BankAccountStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  CLOSED
+}
+
+model LinkedBankAccount {
+  id String @id @default(nanoid(21))
+
+  userId String
+
+  accountId String
+  account   BankAccount @relation(fields: [accountId], references: [id])
+
+  bankName      String
+  maskedAccount String
+
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@unique([userId, accountId])
+  @@index([userId])
+  @@map("linked_bank_accounts")
+}
+
+model BankAccountApproval {
+  id String @id @default(nanoid(21))
+
+  accountId String
+  account   BankAccount @relation(fields: [accountId], references: [id])
+
+  adminId String
+
+  action   ApprovalAction
+  reason   String?
+  comments String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([accountId])
+  @@map("bank_account_approvals")
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+  FROZEN
+  UNFROZEN
+  CLOSED
+}
+
+model BankAdmin {
+  id String @id @default(nanoid(21))
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bankName String
+
+  permissions Json
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([userId])
+  @@map("bank_admins")
+}
+
+// ============================================
+// MERCHANT
+// ============================================
+
+model Merchant {
+  id String @id @default(nanoid(21))
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  businessName     String
+  businessType     BusinessType
+  businessCategory String
+  ledgerEntries    LedgerEntry[]
+  gstNumber        String?
+  panNumber        String
+
+  address Json
+
+  merchantQrCode String @unique
+
+  balance        BigInt @default(0)
+  pendingBalance BigInt @default(0)
+
+  commissionRate Decimal @default(2.0) @db.Decimal(5, 2)
+
+  status   MerchantStatus @default(PENDING_APPROVAL)
+  isFrozen Boolean        @default(false)
+
+  settlementBankAccountId String?
+
+  approvedAt DateTime? @db.Timestamptz
+
+  version Int @default(0)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  payments    MerchantPayment[]
+  settlements Settlement[]
+  refunds     Refund[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([merchantQrCode])
+  @@map("merchants")
+}
+
+enum BusinessType {
+  RETAIL
+  FOOD
+  SERVICES
+  ONLINE
+  OTHER
+}
+
+enum MerchantStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+model MerchantPayment {
+  id String @id @default(nanoid(21))
+
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+
+  customerId String
+
+  amount     BigInt
+  commission BigInt
+  netAmount  BigInt
+
+  status String @default("SUCCESS")
+
+  settlementId String?
+  settlement   Settlement? @relation(fields: [settlementId], references: [id])
+
+  settledAt DateTime? @db.Timestamptz
+
+  customerLedgerId String @unique
+
+  idempotencyKey String @unique
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([merchantId, status])
+  @@index([merchantId, createdAt(sort: Desc)])
+  @@index([merchantId, settledAt])
+  @@index([idempotencyKey])
+  @@map("merchant_payments")
+}
+
+model Refund {
+  id String @id @default(nanoid(21))
+
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+
+  paymentId  String
+  customerId String
+
+  amount BigInt
+
+  reason String
+
+  status String @default("COMPLETED")
+
+  merchantLedgerId String @unique
+  customerLedgerId String @unique
+
+  idempotencyKey String @unique
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+
+  @@index([merchantId, createdAt(sort: Desc)])
+  @@index([paymentId])
+  @@index([idempotencyKey])
+  @@map("refunds")
+}
+
+model Settlement {
+  id String @id @default(nanoid(21))
+
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+
+  amount        BigInt
+  commission    BigInt
+  settledAmount BigInt
+
+  bankAccountId String
+
+  status SettlementStatus @default(PENDING)
+
+  utrNumber String?
+
+  requestedAt DateTime  @default(now()) @db.Timestamptz
+  completedAt DateTime? @db.Timestamptz
+
+  payments MerchantPayment[]
+
+  @@index([merchantId, status])
+  @@index([merchantId, requestedAt(sort: Desc)])
+  @@map("settlements")
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}

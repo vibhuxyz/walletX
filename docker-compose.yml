@@ -1,0 +1,48 @@
+services:
+  api-gateway:
+    image: 10xdevian134/api-gateway:prod
+    container_name: api-gateway
+    ports:
+      - "8080:3000" # Host:Container
+    env_file:
+      - .env
+    restart: always
+    depends_on:
+      - auth-service
+      - wallet-service
+      - bank-service
+      - worker-service
+      - realtime-service
+
+  auth-service:
+    image: 10xdevian134/auth-service:prod
+    env_file:
+      - .env
+    restart: always
+
+  wallet-service:
+    image: 10xdevian134/wallet-service:prod
+    env_file:
+      - .env
+    restart: always
+
+  bank-service:
+    image: 10xdevian134/bank-service:prod
+    env_file:
+      - .env
+    restart: always
+
+  worker-service:
+    image: 10xdevian134/worker-service:prod
+    env_file:
+      - .env
+    restart: always
+
+  realtime-service:
+    image: 10xdevian134/realtime-service:prod
+    container_name: realtime-service
+    ports:
+      - "6006:6006" # WebSocket exposed
+    env_file:
+      - .env
+    restart: always

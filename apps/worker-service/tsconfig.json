@@ -1,0 +1,17 @@
+{
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": false,
+    "declarationMap": false,
+
+    "rootDir": "src",
+    "outDir": "dist",
+
+    "baseUrl": ".",
+    "noEmit": false,
+  },
+  "include": ["src", "../wallet-service/src/server.ts"],
+  "exclude": ["node_modules", "dist"],
+}
