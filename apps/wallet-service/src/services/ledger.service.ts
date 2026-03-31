@@ -434,6 +434,13 @@ type LedgerAnalyticsEntry = {
   metadata: unknown;
 };
 
+type MaterializedAnalyticsRow = {
+  month_start: Date | string;
+  entry_type: string;
+  total_amount: string | number | bigint;
+  transaction_count: string | number | bigint;
+};
+
 function toMonthKey(date: Date) {
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth() + 1;
@@ -456,6 +463,88 @@ function addMonths(date: Date, delta: number) {
   return new Date(
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + delta, 1, 0, 0, 0, 0),
   );
+}
+
+function toBigIntAmount(value: string | number | bigint): bigint {
+  if (typeof value === "bigint") {
+    return value;
+  }
+
+  if (typeof value === "number") {
+    return BigInt(Math.trunc(value));
+  }
+
+  const normalized = value.includes(".") ? value.split(".")[0]! : value;
+  return BigInt(normalized);
+}
+
+async function getMaterializedLedgerAnalyticsEntries(
+  userId: string,
+  startDate: Date,
+  endDate: Date,
+): Promise<LedgerAnalyticsEntry[] | null> {
+  try {
+    const rows = await prismaPostgres.$queryRawUnsafe<
+      MaterializedAnalyticsRow[]
+    >(
+      `
+        SELECT
+          month_start,
+          entry_type,
+          total_amount,
+          transaction_count
+        FROM mv_user_ledger_monthly
+        WHERE user_id = $1
+          AND month_start >= $2
+          AND month_start <= $3
+        ORDER BY month_start ASC, entry_type ASC
+      `,
+      userId,
+      startDate,
+      endDate,
+    );
+
+    return rows.flatMap((row) => {
+      const monthStart =
+        row.month_start instanceof Date
+          ? row.month_start
+          : new Date(row.month_start);
+
+      if (Number.isNaN(monthStart.getTime())) {
+        return [];
+      }
+
+      const transactionCount = Number(row.transaction_count);
+      const safeCount =
+        Number.isFinite(transactionCount) && transactionCount > 0
+          ? transactionCount
+          : 0;
+
+      if (safeCount === 0) {
+        return [];
+      }
+
+      const totalAmount = toBigIntAmount(row.total_amount);
+      const amountPerTransaction = totalAmount / BigInt(safeCount);
+      const remainder = totalAmount % BigInt(safeCount);
+
+      return Array.from({ length: safeCount }, (_, index) => ({
+        entryType:
+          row.entry_type === "WITHDRAWAL" ? "ADMIN_ADJUSTMENT" : row.entry_type,
+        amount:
+          index === 0 ? amountPerTransaction + remainder : amountPerTransaction,
+        createdAt: monthStart,
+        metadata:
+          row.entry_type === "WITHDRAWAL" ? { kind: "WITHDRAWAL" } : null,
+      }));
+    });
+  } catch (error) {
+    logger.warn("Falling back to live ledger analytics query", {
+      userId,
+      reason: error instanceof Error ? error.message : String(error),
+    });
+    return null;
+  }
 }
 
 function buildLedgerAnalytics(entries: LedgerAnalyticsEntry[], months: number) {
@@ -623,6 +712,16 @@ export async function getLedgerAnalytics(userId: string, months: number = 6) {
       startDate,
       endDate,
     });
+
+    const materializedEntries = await getMaterializedLedgerAnalyticsEntries(
+      userId,
+      startDate,
+      endDate,
+    );
+
+    if (materializedEntries) {
+      return buildLedgerAnalytics(materializedEntries, safeMonths);
+    }
 
     const entries = await prismaPostgres.ledgerEntry.findMany({
       where: {

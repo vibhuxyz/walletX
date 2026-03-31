@@ -1,7 +1,11 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV"],
+  "globalEnv": [
+    "NODE_ENV",
+    "ENABLE_ANALYTICS_REFRESH_JOB",
+    "ANALYTICS_REFRESH_INTERVAL_MS"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

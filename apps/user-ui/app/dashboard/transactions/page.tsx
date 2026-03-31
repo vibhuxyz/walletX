@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useDeferredValue } from "react";
+import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
   MessageSquareQuote,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,35 @@ function parseAmount(amountStr: string): number {
   return parseFloat(amountStr.replace(/[^0-9.-]+/g, ""));
 }
 
+type TransactionListItem =
+  | { type: "header"; id: string; date: string }
+  | { type: "transaction"; id: string; tx: LedgerEntry };
+
+function getAmountStyle(tx: LedgerEntry) {
+  if (tx.status === "FAILED") {
+    return {
+      color: "text-red-600",
+      prefix: "",
+    };
+  }
+  if (tx.status === "PENDING") {
+    return {
+      color: "text-yellow-600",
+      prefix: "",
+    };
+  }
+  if (tx.isIncoming) {
+    return {
+      color: "text-green-600",
+      prefix: "+",
+    };
+  }
+  return {
+    color: "text-foreground",
+    prefix: "-",
+  };
+}
+
 export default function TransactionsPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -70,6 +100,7 @@ export default function TransactionsPage() {
   const [selectedTransaction, setSelectedTransaction] =
     useState<LedgerEntry | null>(null);
   const deferredSearch = useDeferredValue(search);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   //  Fetch Ledger Entries
   const {
@@ -136,6 +167,32 @@ export default function TransactionsPage() {
     }
     return Object.entries(groups);
   }, [filtered]);
+
+  const virtualItems = useMemo<TransactionListItem[]>(() => {
+    const items: TransactionListItem[] = [];
+    for (const [date, txs] of grouped) {
+      items.push({
+        type: "header",
+        id: `header-${date}`,
+        date,
+      });
+      for (const tx of txs) {
+        items.push({
+          type: "transaction",
+          id: tx.transactionId,
+          tx,
+        });
+      }
+    }
+    return items;
+  }, [grouped]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: virtualItems.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => (virtualItems[index]?.type === "header" ? 44 : 92),
+    overscan: 8,
+  });
 
   // Stats Calculation
   const { totalIncome, totalExpenses, netFlow } = useMemo(() => {
@@ -344,55 +401,54 @@ export default function TransactionsPage() {
                   </p>
                 </div>
               ) : (
-                grouped.map(([date, txs]) => (
-                  <div key={date}>
-                    {/* Date separator */}
-                    <div className="mb-2 flex items-center gap-3">
-                      <p className="whitespace-nowrap text-sm font-semibold text-muted-foreground">
-                        {date}
-                      </p>
-                      <div className="h-px flex-1 bg-border/40" />
-                    </div>
+                <div
+                  ref={parentRef}
+                  className="max-h-[70vh] overflow-auto rounded-2xl"
+                >
+                  <div
+                    style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+                    className="relative w-full"
+                  >
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const item = virtualItems[virtualRow.index];
 
-                    <div className="flex flex-col gap-0.5">
-                      {txs.map((tx) => {
-                        //  Status-based styling logic
-                        const getAmountStyle = () => {
-                          if (tx.status === "FAILED") {
-                            return {
-                              color: "text-red-600",
-                              prefix: "",
-                            };
-                          }
-                          if (tx.status === "PENDING") {
-                            return {
-                              color: "text-yellow-600",
-                              prefix: "",
-                            };
-                          }
-                          // SUCCESS
-                          if (tx.isIncoming) {
-                            return {
-                              color: "text-green-600",
-                              prefix: "+",
-                            };
-                          }
-                          return {
-                            color: "text-foreground",
-                            prefix: "-",
-                          };
-                        };
+                      if (!item) return null;
 
-                        const amountStyle = getAmountStyle();
-
+                      if (item.type === "header") {
                         return (
+                          <div
+                            key={item.id}
+                            className="absolute left-0 top-0 w-full px-1"
+                            style={{
+                              transform: `translateY(${virtualRow.start}px)`,
+                            }}
+                          >
+                            <div className="mb-2 flex items-center gap-3">
+                              <p className="whitespace-nowrap text-sm font-semibold text-muted-foreground">
+                                {item.date}
+                              </p>
+                              <div className="h-px flex-1 bg-border/40" />
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      const tx = item.tx;
+                      const amountStyle = getAmountStyle(tx);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="absolute left-0 top-0 w-full px-1"
+                          style={{
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
+                        >
                           <button
-                            key={tx.transactionId}
                             type="button"
                             onClick={() => setSelectedTransaction(tx)}
                             className="flex w-full items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-colors hover:bg-secondary/40"
                           >
-                            {/* Avatar with status */}
                             <TxAvatar
                               name={tx.title}
                               size="md"
@@ -400,23 +456,20 @@ export default function TransactionsPage() {
                               status={tx.status}
                             />
 
-                            {/* Info */}
                             <div className="flex-1 overflow-hidden">
                               <p className="truncate text-sm font-semibold text-foreground">
                                 {tx.title}
                               </p>
-                              <div className="flex flex-col gap-0.5 mt-0.5">
-                                {/* Subtitle & Ref ID */}
-                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <div className="mt-0.5 flex flex-col gap-0.5">
+                                <p className="flex items-center gap-1 text-xs text-muted-foreground">
                                   <span>{tx.subtitle}</span>
-                                  <span className="opacity-50 text-[10px] hidden sm:inline-block">
+                                  <span className="hidden text-[10px] opacity-50 sm:inline-block">
                                     • Ref: {tx.referenceId.slice(-8)}
                                   </span>
                                 </p>
 
-                                {/* Note Display */}
                                 {tx.note && (
-                                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground/80 italic truncate">
+                                  <p className="flex items-center gap-1.5 truncate text-xs italic text-muted-foreground/80">
                                     <MessageSquareQuote className="h-3 w-3 opacity-50" />
                                     <span>{tx.note}</span>
                                   </p>
@@ -424,12 +477,11 @@ export default function TransactionsPage() {
                               </div>
                             </div>
 
-                            {/* Amount & Status */}
                             <div className="flex flex-col items-end gap-1">
                               <div className="flex items-center gap-2">
                                 <Badge
                                   variant="secondary"
-                                  className={`hidden sm:inline-flex text-[10px] uppercase h-5
+                                  className={`hidden h-5 text-[10px] uppercase sm:inline-flex
                                     ${tx.status === "SUCCESS" ? "bg-green-500/10 text-green-600 hover:bg-green-500/20" : ""}
                                     ${tx.status === "PENDING" ? "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20" : ""}
                                     ${tx.status === "FAILED" ? "bg-red-500/10 text-red-600 hover:bg-red-500/20" : ""}
@@ -438,7 +490,6 @@ export default function TransactionsPage() {
                                   {tx.status}
                                 </Badge>
 
-                                {/*  Amount with proper prefix and color */}
                                 <p
                                   className={`text-sm font-bold ${amountStyle.color}`}
                                 >
@@ -451,11 +502,11 @@ export default function TransactionsPage() {
                               </p>
                             </div>
                           </button>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))
+                </div>
               )}
             </motion.div>
           </AnimatePresence>

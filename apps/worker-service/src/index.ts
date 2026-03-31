@@ -7,6 +7,7 @@ import { startDlqAlertConsumer } from "./consumers/dlqAlert.consumer.js";
 import { startOutboxDispatcherJob } from "./jobs/outbox-dispatcher.job.js";
 import { startBankReconciliationJob } from "./jobs/bank-reconciliation.job.js";
 import { startPaymentExpiryJob } from "./jobs/payment-expiry.job.js";
+import { startAnalyticsRefreshJob } from "./jobs/analytics-refresh.job.js";
 
 const logger = new Logger("WorkerService");
 
@@ -40,10 +41,12 @@ async function start() {
     startPaymentExpiryJob();
     logger.info("✅ Payment expiry job started");
 
+    startAnalyticsRefreshJob();
+    logger.info("✅ Analytics refresh job started");
+
     logger.info(
       "🎉 Worker Service started successfully - All consumers active",
     );
-
   } catch (error) {
     logger.error("❌ Failed to start Worker Service", error);
     console.error(error); // ← Add console.error to see the actual error
