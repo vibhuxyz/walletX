@@ -11,7 +11,7 @@ import compression from "compression";
 import { loggingMiddleware } from "./middlewares/logging.middleware.js";
 
 const app = express();
-
+ 
 const logger = new Logger("APIGateway");
 
 // Preserve real client IP when behind reverse proxies / tunnels.
