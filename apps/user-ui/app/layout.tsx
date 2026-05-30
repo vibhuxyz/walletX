@@ -3,6 +3,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 import Providers from "./Provider";
 import { Inter } from "next/font/google";
+import FingerprintInitializer from "@/lib/FingerprintInitializer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -118,6 +119,7 @@ export default function RootLayout({
         ))}
       </head>
       <body className="font-sans antialiased bg-background text-foreground ml-3 mr-3">
+        <FingerprintInitializer />
         <Providers>
           <AuthProvider>{children}</AuthProvider>
         </Providers>

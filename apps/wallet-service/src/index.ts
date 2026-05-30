@@ -11,6 +11,7 @@ import topupRoutes from "./routes/topup.routes.js";
 import requestRoutes from "./routes/request.routes.js";
 import ledgerRoutes from "./routes/ledger.routes.js";
 import wsRoutes from "./routes/auth.routes.js";
+import connectRoutes from "./routes/connect.routes.js";
 
 const logger = new Logger("wallet-service");
 
@@ -34,6 +35,7 @@ app.use("/api/v0/wallet", topupRoutes);
 app.use("/api/v0/wallet", requestRoutes);
 app.use("/api/v0/wallet", ledgerRoutes);
 app.use("/api/v0/wallet", wsRoutes);
+app.use("/api/v1/connect", connectRoutes);
 
 //
 //

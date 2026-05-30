@@ -14,6 +14,12 @@ export interface DeviceInfo {
 export interface ExtendedRequest extends Request {
   deviceInfo?: DeviceInfo;
   requestId?: string;
+  partner?: {
+    id: string;
+    name: string;
+    scopes: string[];
+    redirectUris: string[];
+  };
 }
 
 // Module augmentation
@@ -21,6 +27,12 @@ declare module "express" {
   interface Request {
     deviceInfo?: DeviceInfo;
     requestId?: string;
+    partner?: {
+      id: string;
+      name: string;
+      scopes: string[];
+      redirectUris: string[];
+    };
   }
 }
 

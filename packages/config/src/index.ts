@@ -20,6 +20,18 @@ function requireEnv(key: string, fallback?: string): string {
   return value;
 }
 
+function optionalEnv(key: string, fallback = ""): string {
+  const value = process.env[key] ?? fallback;
+
+  if (!value) {
+    console.warn(`⚠️ ENV OPTIONAL MISSING: ${key}`);
+    return "";
+  }
+
+  console.log(`✅ ENV LOADED: ${key}`);
+  return value;
+}
+
 function requireNumber(key: string, fallback?: number): number {
   const value = process.env[key] ?? fallback?.toString();
 
@@ -76,7 +88,7 @@ export const ENV = {
 
   // RESEND_API_KEY: requireEnv("RESEND_API_KEY"),
 
-  BREVO_API_KEY: requireEnv("BREVO_API_KEY"),
+  BREVO_API_KEY: optionalEnv("BREVO_API_KEY"),
 
   // SMS (Twilio)
   // TWILIO_ACCOUNT_SID: requireEnv("TWILIO_ACCOUNT_SID"),

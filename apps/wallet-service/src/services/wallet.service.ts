@@ -219,15 +219,24 @@ export const getWalletBalance = async (userId: string) => {
   }
 
   const total = wallet.balance;
+  const activeHolds = await (prismaPostgres as any).walletHold.aggregate({
+    where: { userId, status: "ACTIVE" },
+    _sum: { amount: true },
+  });
+  const reserved = BigInt(activeHolds._sum.amount ?? 0);
   const isLocked =
     wallet.status === "PENDING_KYC" ||
     wallet.status === "PENDING_PIN" ||
     wallet.isFrozen ||
     wallet.status === "SUSPENDED";
+  const available = total - reserved;
 
   const result = {
     totalBalance: Currency.toRupees(total),
-    availableBalance: isLocked ? "0.00" : Currency.toRupees(total),
+    availableBalance: isLocked
+      ? "0.00"
+      : Currency.toRupees(available > 0n ? available : 0n),
+    reservedBalance: Currency.toRupees(reserved),
     currency: "INR",
     status: wallet.status,
     isFrozen: wallet.isFrozen,

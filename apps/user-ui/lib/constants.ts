@@ -12,6 +12,7 @@ import {
   QrCode,
   CreditCard,
   DollarSign,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +47,7 @@ export const merchantNavItems: NavItem[] = [
 
 export const adminNavItems: NavItem[] = [
   { title: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { title: "Connect", href: "/admin/connect/partners", icon: KeyRound },
   { title: "Approvals", href: "/admin/approvals", icon: ShieldCheck },
   { title: "Users", href: "/admin/users", icon: Users },
   { title: "Settings", href: "/admin/settings", icon: Settings },

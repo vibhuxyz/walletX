@@ -252,10 +252,12 @@ export default function LoginPage() {
       } else {
         setLoginError(null);
         toast.error(
-          fields.message ||
-            fields.code ||
-            fields.error ||
-            "Login failed. Please try again.",
+          !err.response
+            ? "Cannot reach WalletX API. Start the API gateway and auth service, then try again."
+            : fields.message ||
+                fields.code ||
+                fields.error ||
+                "Login failed. Please try again.",
         );
       }
     },

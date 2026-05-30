@@ -69,7 +69,14 @@ export default function RegisterForm() {
         setError("phone", { message: "This phone number is already in use." });
       } else {
         setRegisterError(null);
-        toast.error(data?.message ?? data?.code ?? data?.error ?? "Registration failed. Please try again.");
+        toast.error(
+          !err.response
+            ? "Cannot reach WalletX API. Start the API gateway and auth service, then try again."
+            : data?.message ??
+                data?.code ??
+                data?.error ??
+                "Registration failed. Please try again.",
+        );
       }
     },
   });

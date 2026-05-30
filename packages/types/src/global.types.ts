@@ -28,10 +28,18 @@ export interface RefreshTokenData {
   lastUsedAt: string;
 }
 
+export interface PartnerAuthPayload {
+  id: string;
+  name: string;
+  scopes: string[];
+  redirectUris: string[];
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: JWTPayload;
+      partner?: PartnerAuthPayload;
       deviceInfo?: DeviceInfo;
       requestId?: string;
     }

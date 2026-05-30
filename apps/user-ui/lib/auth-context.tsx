@@ -345,6 +345,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     prefetchDashboardData();
+    const postAuthRedirect =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem("postAuthRedirect")
+        : null;
+
+    if (postAuthRedirect?.startsWith("/connect/onboard/")) {
+      sessionStorage.removeItem("postAuthRedirect");
+      router.push(postAuthRedirect);
+      return;
+    }
+
     router.push("/dashboard");
   }, [prefetchDashboardData, queryClient, router]);
 

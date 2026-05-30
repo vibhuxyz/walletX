@@ -13,18 +13,21 @@ import type {
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
+import { getStaticDeviceName } from "../fingerprint";
+
 export function getDeviceHeaders() {
   if (typeof window === "undefined") return {};
+  
+  // Try to get the robust fingerprint first, fallback to random UUID if not yet generated
   let deviceId = localStorage.getItem("fw_device_id");
   if (!deviceId) {
     deviceId = crypto.randomUUID();
     localStorage.setItem("fw_device_id", deviceId);
   }
+
   return {
     "X-Device-Id": deviceId,
-    "X-Device-Name": navigator.userAgent.includes("Mobile")
-      ? "Mobile"
-      : "Desktop",
+    "X-Device-Name": getStaticDeviceName(),
   };
 }
 

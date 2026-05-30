@@ -424,6 +424,10 @@ const getSmtpTransporter = () => {
 };
 
 const sendWithBrevo = async (to: string, subject: string, html: string) => {
+  if (!ENV.BREVO_API_KEY) {
+    throw new Error("BREVO_API_KEY is required for Brevo email delivery");
+  }
+
   await brevoCircuit.execute(async () => {
     await retryWithBackoff(
       async () => {

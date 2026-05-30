@@ -491,14 +491,15 @@ export const getProfile = async (userId: string, role: string) => {
 
   if (role === "USER") {
     // add waller info
-    response.wallet = {
-      id: user.wallet?.id,
-      //@ts-ignore
-      balance: Currency.toRupees(user.wallet?.balance),
-      status: user.wallet?.status,
-      isFrozen: user.wallet?.isFrozen,
-      qrCode: user.wallet?.qrCode,
-    };
+    response.wallet = user.wallet
+      ? {
+          id: user.wallet.id,
+          balance: Currency.toRupees(user.wallet.balance),
+          status: user.wallet.status,
+          isFrozen: user.wallet.isFrozen,
+          qrCode: user.wallet.qrCode,
+        }
+      : null;
 
     // add kyc profile with selfi url
     response.kycProfile = {

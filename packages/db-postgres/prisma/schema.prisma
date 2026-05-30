@@ -46,6 +46,9 @@ model User {
   kycProfile           KycProfile?
   relatedLedgerEntries LedgerEntry[]    @relation("RelatedUserLedger")
   bankAccounts         BankAccount[]
+  partnerWalletLinks   PartnerWalletLink[]
+  connectSessions      ConnectOnboardingSession[]
+  walletHolds          WalletHold[]
 
   @@index([email])
   @@index([phone])
@@ -100,6 +103,10 @@ model Wallet {
 
   createdAt DateTime @default(now()) @db.Timestamptz
   updatedAt DateTime @updatedAt @db.Timestamptz
+
+  partnerWalletLinks PartnerWalletLink[]
+  connectSessions    ConnectOnboardingSession[]
+  walletHolds        WalletHold[]
 
   @@index([userId])
   @@index([status, isFrozen])
@@ -185,6 +192,152 @@ enum LedgerEntryType {
   MERCHANT_REFUND
   PAYMENT_REQUEST_PAID
   ADMIN_ADJUSTMENT
+  PARTNER_HOLD_CAPTURE
+  PARTNER_CREDIT
+}
+
+// ============================================
+// WALLETX CONNECT / PARTNER API
+// ============================================
+
+model PartnerApp {
+  id String @id @default(nanoid(21))
+
+  name          String
+  apiKey        String  @unique
+  apiSecretHash String
+  redirectUris  String[]
+  scopes        String[]
+
+  status PartnerAppStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  walletLinks PartnerWalletLink[]
+  sessions    ConnectOnboardingSession[]
+  walletHolds WalletHold[]
+
+  @@index([apiKey])
+  @@index([status])
+  @@map("partner_apps")
+}
+
+enum PartnerAppStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model PartnerWalletLink {
+  id String @id @default(nanoid(21))
+
+  partnerId String
+  partner   PartnerApp @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  partnerUserId String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  status PartnerWalletLinkStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([partnerId, partnerUserId])
+  @@unique([partnerId, userId])
+  @@index([partnerId, walletId])
+  @@index([userId])
+  @@map("partner_wallet_links")
+}
+
+enum PartnerWalletLinkStatus {
+  ACTIVE
+  REVOKED
+}
+
+model ConnectOnboardingSession {
+  id String @id @default(nanoid(21))
+
+  partnerId String
+  partner   PartnerApp @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  partnerUserId String
+  email         String
+  phone         String?
+  fullName      String?
+  redirectUrl   String
+
+  status ConnectOnboardingSessionStatus @default(PENDING)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  walletId String?
+  wallet   Wallet? @relation(fields: [walletId], references: [id], onDelete: SetNull)
+
+  authCode     String?   @unique
+  authCodeHash String?
+  completedAt  DateTime? @db.Timestamptz
+  expiresAt    DateTime  @db.Timestamptz
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([partnerId, partnerUserId])
+  @@index([status, expiresAt])
+  @@index([authCode])
+  @@map("connect_onboarding_sessions")
+}
+
+enum ConnectOnboardingSessionStatus {
+  PENDING
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+model WalletHold {
+  id String @id @default(nanoid(21))
+
+  partnerId String
+  partner   PartnerApp @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  walletId String
+  wallet   Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount BigInt
+  currency String @default("INR")
+  reason String
+  referenceId String
+  idempotencyKey String
+
+  status WalletHoldStatus @default(ACTIVE)
+
+  capturedLedgerId String? @unique
+  capturedAt DateTime? @db.Timestamptz
+  releasedAt DateTime? @db.Timestamptz
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@unique([partnerId, idempotencyKey])
+  @@index([partnerId, referenceId])
+  @@index([walletId, status])
+  @@index([userId, status])
+  @@map("wallet_holds")
+}
+
+enum WalletHoldStatus {
+  ACTIVE
+  CAPTURED
+  RELEASED
 }
 
 model LedgerEntry {

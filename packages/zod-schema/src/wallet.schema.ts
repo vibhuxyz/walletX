@@ -107,5 +107,56 @@ export const withdrawToBankSchema = z.object({
   note: z.string().trim().max(140, "Note can be up to 140 characters").optional(),
 });
 
+export const createConnectPartnerSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  redirectUris: z.array(z.string().url()).min(1),
+  scopes: z
+    .array(
+      z.enum([
+        "wallet:read",
+        "wallet:hold",
+        "wallet:capture",
+        "wallet:credit",
+      ]),
+    )
+    .default(["wallet:read", "wallet:hold", "wallet:capture", "wallet:credit"]),
+});
+
+export const createOnboardingSessionSchema = z.object({
+  partnerUserId: z.string().trim().min(1).max(120),
+  email: z.string().trim().email(),
+  phone: z.string().trim().min(8).max(20).optional(),
+  fullName: z.string().trim().min(2).max(100).optional(),
+  redirectUrl: z.string().url(),
+});
+
+export const exchangeConnectTokenSchema = z.object({
+  code: z.string().trim().min(20),
+});
+
+export const createWalletHoldSchema = z.object({
+  amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid amount format"),
+  currency: z.literal("INR").default("INR"),
+  reason: z.string().trim().min(3).max(120),
+  referenceId: z.string().trim().min(1).max(160),
+});
+
+export const partnerWalletCreditSchema = z.object({
+  amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid amount format"),
+  currency: z.literal("INR").default("INR"),
+  reason: z.string().trim().min(3).max(120),
+  referenceId: z.string().trim().min(1).max(160),
+});
+
 export type ActivateWalletInput = z.infer<typeof activateWalletSchema>;
 export type WithdrawToBankInput = z.infer<typeof withdrawToBankSchema>;
+export type CreateConnectPartnerInput = z.infer<
+  typeof createConnectPartnerSchema
+>;
+export type CreateOnboardingSessionInput = z.infer<
+  typeof createOnboardingSessionSchema
+>;
+export type CreateWalletHoldInput = z.infer<typeof createWalletHoldSchema>;
+export type PartnerWalletCreditInput = z.infer<
+  typeof partnerWalletCreditSchema
+>;

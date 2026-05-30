@@ -77,6 +77,17 @@ export function setupProxies(app: Express) {
   );
 
   app.use(
+    "/api/v1/connect",
+    createServiceProxy(
+      ENV.WALLET_SERVICE_URL,
+      {
+        "^/": "/api/v1/connect/",
+      },
+      "Wallet connect service",
+    ),
+  );
+
+  app.use(
     "/api/v0/bank",
     createServiceProxy(
       ENV.BANK_SERVICE_URL,

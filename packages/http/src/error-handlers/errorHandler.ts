@@ -13,13 +13,14 @@ export function errorHandler(
     timestamp: new Date().toISOString(),
   };
 
-  if (err instanceof ApiError) {
-    res.status(err.statusCode).json({
+  if (err instanceof ApiError || (err as any).isApiError) {
+    const apiError = err as ApiError;
+    res.status(apiError.statusCode || 500).json({
       success: false,
       error: {
-        code: err.code,
-        message: err.message,
-        details: err.details ?? null,
+        code: apiError.code || "INTERNAL_ERROR",
+        message: apiError.message,
+        details: apiError.details ?? null,
       },
       meta,
     });

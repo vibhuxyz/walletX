@@ -1,4 +1,6 @@
 export class ApiError extends Error {
+  public readonly isApiError = true;
+
   constructor(
     public statusCode: number,
     public code: string,
