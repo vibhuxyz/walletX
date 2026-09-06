@@ -1,6 +1,13 @@
 type UserRole = "user" | "merchant" | "admin" | null;
 
 export const TEST_ACCOUNTS = {
+  trial_user: {
+    email: "try.vikram.kumar01@gmail.com",
+    password: "Vikram12@",
+    name: "Trial User",
+    role: "customer" as UserRole,
+    kycApproved: true,
+  },
   customer: {
     email: "vibhu@gmail.com",
     password: "Vikram12@",
@@ -15,18 +22,4 @@ export const TEST_ACCOUNTS = {
     role: "customer" as UserRole,
     kycApproved: true,
   },
-  // merchant: {
-  //   email: "admin@urbancoffee.com",
-  //   password: "Password123",
-  //   name: "Urban Coffee House",
-  //   role: "merchant" as UserRole,
-  //   kycApproved: true,
-  // },
-  // admin: {
-  //   email: "admin@finewallet.com",
-  //   password: "Password123",
-  //   name: "System Admin",
-  //   role: "admin" as UserRole,
-  //   kycApproved: true,
-  // },
 };

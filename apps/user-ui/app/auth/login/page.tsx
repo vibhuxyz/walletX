@@ -475,6 +475,12 @@ export default function LoginPage() {
         <div className="flex flex-col gap-1.5">
           {[
             {
+              ...TEST_ACCOUNTS.trial_user,
+              label: "Trial User (Login Without OTP/PIN Setup)",
+              icon: Zap,
+              color: "text-purple-500 bg-purple-500/10 border-purple-500/50 border",
+            },
+            {
               ...TEST_ACCOUNTS.customer,
               label: "Customer (No KYC)",
               icon: User,
@@ -509,12 +515,21 @@ export default function LoginPage() {
             </button>
           ))}
         </div>
-        <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          Password:{" "}
-          <span className="font-mono font-medium text-foreground">
-            Password123
-          </span>
-        </p>
+        <div className="mt-2 flex flex-col gap-1 text-center text-[11px] text-muted-foreground">
+          <p>
+            Password:{" "}
+            <span className="font-mono font-medium text-foreground">
+              Vikram12@
+            </span>
+          </p>
+          <p>
+            OTP:{" "}
+            <span className="font-mono font-medium text-foreground">0000</span>
+            {" • "}
+            PIN:{" "}
+            <span className="font-mono font-medium text-foreground">1234</span>
+          </p>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">

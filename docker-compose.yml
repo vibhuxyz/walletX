@@ -1,6 +1,6 @@
 services:
   api-gateway:
-    image: 10xdevian134/api-gateway:prod
+    image: 10xdevian134/wallet-api-gateway:prod
     container_name: api-gateway
     ports:
       - "8080:3000" # Host:Container
@@ -15,31 +15,31 @@ services:
       - realtime-service
 
   auth-service:
-    image: 10xdevian134/auth-service:prod
+    image: 10xdevian134/wallet-auth-service:prod
     env_file:
       - .env
     restart: always
 
   wallet-service:
-    image: 10xdevian134/wallet-service:prod
+    image: 10xdevian134/wallet-wallet-service:prod
     env_file:
       - .env
     restart: always
 
   bank-service:
-    image: 10xdevian134/bank-service:prod
+    image: 10xdevian134/wallet-bank-service:prod
     env_file:
       - .env
     restart: always
 
   worker-service:
-    image: 10xdevian134/worker-service:prod
+    image: 10xdevian134/wallet-worker-service:prod
     env_file:
       - .env
     restart: always
 
   realtime-service:
-    image: 10xdevian134/realtime-service:prod
+    image: 10xdevian134/wallet-realtime-service:prod
     container_name: realtime-service
     ports:
       - "6006:6006" # WebSocket exposed

@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  # ==========================================
+  # ========================================== 
   # 1. API GATEWAY
   # ==========================================
   api-gateway:
@@ -103,10 +103,10 @@ jobs:
           docker push ${{ secrets.DOCKER_USERNAME }}/wallet-realtime-service:prod
 
   # ==========================================
-  # 7. DEPLOY TO AWS EC2
+  # 7. DEPLOY TO DIGITALOCEAN
   # ==========================================
-  deploy-to-ec2:
-    name: Deploy to AWS EC2
+  deploy-to-droplet:
+    name: Deploy to DigitalOcean
     needs:
       [
         api-gateway,
@@ -127,11 +127,11 @@ jobs:
       - name: SSH and Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST_IP }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
           script: |
-            cd ~/wallet-app
-            docker compose pull
-            docker compose up -d
-            docker image prune -f
+            cd wallet-app
+            sudo docker compose pull
+            sudo docker compose up -d
+            sudo docker image prune -f
