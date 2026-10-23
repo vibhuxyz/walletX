@@ -12,6 +12,15 @@ import { authApi, pendingEmail } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { OtpSlotInput } from "@/components/ui/otp-slot-input";
 import {
   Eye,
@@ -38,6 +47,27 @@ const FEATURES = [
   { icon: ShieldCheck, label: "Bank-Grade Security" },
   { icon: Zap, label: "Zero Fees" },
   { icon: TrendingUp, label: "Smart Analytics" },
+];
+
+const TEST_ACCOUNT_ITEMS = [
+  {
+    ...TEST_ACCOUNTS.trial_user,
+    label: "Trial User (Login Without OTP/PIN Setup)",
+    icon: Zap,
+    color: "text-purple-500 bg-purple-500/10 border-purple-500/50 border",
+  },
+  {
+    ...TEST_ACCOUNTS.customer,
+    label: "Customer (No KYC)",
+    icon: User,
+    color: "text-primary bg-primary/10",
+  },
+  {
+    ...TEST_ACCOUNTS.verified_customer,
+    label: "Customer (KYC Approved)",
+    icon: ShieldCheck,
+    color: "text-success bg-success/10",
+  },
 ];
 
 function LoginShell({ children }: { children: React.ReactNode }) {
@@ -228,7 +258,9 @@ export default function LoginPage() {
     },
     onError: (err: AxiosError<ApiErrorResponse>) => {
       const fields = getErrorFields(err.response?.data);
-      const errorType = classifyLoginError(fields as unknown as Record<string, string>);
+      const errorType = classifyLoginError(
+        fields as unknown as Record<string, string>,
+      );
 
       if (errorType === "wrong_password") {
         const newAttempts = passwordAttempts + 1;
@@ -312,7 +344,7 @@ export default function LoginPage() {
     },
   });
 
-  function quickLogin(account: (typeof TEST_ACCOUNTS)["customer"]) {
+  function quickLogin(account: { email: string; password: string }) {
     loginForm.setValue("email", account.email, { shouldValidate: true });
     loginForm.setValue("password", account.password, { shouldValidate: true });
     setLoginError(null);
@@ -323,7 +355,9 @@ export default function LoginPage() {
     return (
       <LoginShell>
         <div className="mb-1 flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
             onClick={() => {
               setScreen("login");
@@ -332,12 +366,12 @@ export default function LoginPage() {
               setOtpLocked(false);
               setRemainingAttempts(null);
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/40 text-muted-foreground transition-colors hover:text-foreground"
+            className="h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground"
             aria-label="Back to login"
           >
             <ArrowLeft className="h-4 w-4" />
-          </button>
-          <span className="text-sm text-muted-foreground">Back to login</span>
+            <span className="text-sm">Back to login</span>
+          </Button>
         </div>
 
         <div className="mt-5 mb-6">
@@ -383,36 +417,38 @@ export default function LoginPage() {
 
             {/* Locked banner */}
             {otpLocked && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-center">
-                <p className="text-sm font-bold text-destructive">
+              <Alert variant="destructive">
+                <AlertTitle className="text-sm font-bold">
                   🔒 Too many attempts
-                </p>
-                <p className="text-xs text-destructive/80 mt-0.5">
+                </AlertTitle>
+                <AlertDescription className="text-xs mt-0.5">
                   Try again after 30 minutes or resend a new OTP.
-                </p>
-              </div>
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Wrong OTP + remaining attempts */}
             {!otpLocked && otpError === "wrong" && (
-              <div className="flex flex-col items-center gap-1 text-center">
-                <p className="text-sm font-semibold text-destructive">
-                  ❌ Incorrect OTP
-                </p>
+              <Alert variant="destructive">
+                <AlertTitle className="text-sm font-semibold">
+                  Incorrect OTP
+                </AlertTitle>
                 {remainingAttempts !== null && (
-                  <p className="text-xs text-warning-foreground">
+                  <AlertDescription className="text-xs mt-0.5">
                     ⚠️ {remainingAttempts} attempt
                     {remainingAttempts === 1 ? "" : "s"} remaining
-                  </p>
+                  </AlertDescription>
                 )}
-              </div>
+              </Alert>
             )}
 
             {/* Generic error */}
             {!otpLocked && otpError && otpError !== "wrong" && (
-              <p className="text-xs text-destructive font-medium text-center">
-                {otpError}
-              </p>
+              <Alert variant="destructive">
+                <AlertDescription className="text-xs font-medium">
+                  {otpError}
+                </AlertDescription>
+              </Alert>
             )}
           </div>
 
@@ -468,36 +504,25 @@ export default function LoginPage() {
       </div>
 
       {/* Test accounts */}
-      <div className="mb-5 rounded-xl border border-dashed border-border bg-muted/30 p-3.5">
-        <p className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Test Accounts
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {[
-            {
-              ...TEST_ACCOUNTS.trial_user,
-              label: "Trial User (Login Without OTP/PIN Setup)",
-              icon: Zap,
-              color: "text-purple-500 bg-purple-500/10 border-purple-500/50 border",
-            },
-            {
-              ...TEST_ACCOUNTS.customer,
-              label: "Customer (No KYC)",
-              icon: User,
-              color: "text-primary bg-primary/10",
-            },
-            {
-              ...TEST_ACCOUNTS.verified_customer,
-              label: "Customer (KYC Approved)",
-              icon: ShieldCheck,
-              color: "text-success bg-success/10",
-            },
-          ].map((acc) => (
-            <button
-              key={acc.email}
+      <Card className="mb-5 border-dashed bg-muted/30 py-3.5 gap-2.5 shadow-none">
+        <CardHeader className="p-0 px-3.5 pb-0">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Test Accounts
+            </CardTitle>
+            <Badge variant="outline" className="text-[10px] py-0 font-normal">
+              Quick Login
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0 px-3.5 flex flex-col gap-1.5">
+          {TEST_ACCOUNT_ITEMS.map((acc) => (
+            <Button
+              key={acc.id}
+              variant="outline"
               type="button"
               onClick={() => quickLogin(acc)}
-              className="flex items-center gap-2.5 rounded-lg border border-border bg-card p-2 text-left transition-colors hover:border-accent/40 hover:bg-accent/5"
+              className="h-auto w-full justify-start gap-2.5 p-2 bg-card hover:bg-accent/5 hover:border-accent/40 font-normal text-left"
             >
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${acc.color}`}
@@ -512,10 +537,10 @@ export default function LoginPage() {
                   {acc.email}
                 </p>
               </div>
-            </button>
+            </Button>
           ))}
-        </div>
-        <div className="mt-2 flex flex-col gap-1 text-center text-[11px] text-muted-foreground">
+        </CardContent>
+        <CardFooter className="p-0 px-3.5 pt-1 flex flex-col gap-1 text-center text-[11px] text-muted-foreground">
           <p>
             Password:{" "}
             <span className="font-mono font-medium text-foreground">
@@ -529,56 +554,53 @@ export default function LoginPage() {
             PIN:{" "}
             <span className="font-mono font-medium text-foreground">1234</span>
           </p>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
 
       <div className="flex flex-col gap-4">
         {loginError === "user_not_found" && (
-          <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3.5 py-3 text-sm text-destructive">
-            <UserX className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="font-semibold">No account found</p>
-              <p className="text-destructive/80 text-xs mt-0.5">
-                <Link
-                  href="/auth/register"
-                  className="font-semibold underline underline-offset-2"
-                >
-                  Sign up instead
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <UserX className="h-4 w-4" />
+            <AlertTitle>No account found</AlertTitle>
+            <AlertDescription className="text-xs mt-0.5">
+              <Link
+                href="/auth/register"
+                className="font-semibold underline underline-offset-2"
+              >
+                Sign up instead
+              </Link>
+              .
+            </AlertDescription>
+          </Alert>
         )}
 
         {loginError === "wrong_password" && (
-          <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-3.5 py-3 text-sm text-warning-foreground">
-            <KeyRound className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="font-semibold">Incorrect password</p>
-              <p className="text-xs mt-0.5 opacity-80">
-                Please double-check and try again.
-              </p>
-            </div>
-          </div>
+          <Alert
+            variant="destructive"
+            className="border-warning/30 bg-warning/5 text-warning-foreground [&>svg]:text-warning-foreground"
+          >
+            <KeyRound className="h-4 w-4" />
+            <AlertTitle>Incorrect password</AlertTitle>
+            <AlertDescription className="text-xs mt-0.5 opacity-90">
+              Please double-check and try again.
+            </AlertDescription>
+          </Alert>
         )}
 
         {loginError === "reset_required" && (
-          <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3.5 py-3 text-sm text-destructive">
-            <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="font-semibold">Too many failed attempts</p>
-              <p className="text-destructive/80 text-xs mt-0.5">
-                <Link
-                  href="/auth/forgot-password"
-                  className="font-semibold underline underline-offset-2"
-                >
-                  Reset your password
-                </Link>{" "}
-                to regain access.
-              </p>
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <RotateCcw className="h-4 w-4" />
+            <AlertTitle>Too many failed attempts</AlertTitle>
+            <AlertDescription className="text-xs mt-0.5">
+              <Link
+                href="/auth/forgot-password"
+                className="font-semibold underline underline-offset-2"
+              >
+                Reset your password
+              </Link>{" "}
+              to regain access.
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="flex flex-col gap-1.5">

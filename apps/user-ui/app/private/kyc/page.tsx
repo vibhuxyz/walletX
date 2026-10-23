@@ -292,6 +292,7 @@ export default function KycPage() {
         res.data?.data?.message ?? "KYC approved! Wallet activated.",
       );
       await login();
+      router.replace("/dashboard");
     },
     onError: (err: AxiosError<{ message: string; error: string }>) => {
       toast.error(
@@ -345,7 +346,7 @@ export default function KycPage() {
     // Outer wrapping main page background
     <div className="flex min-h-screen items-center justify-center bg-muted/20 p-4 sm:p-8 lg:p-12">
       {/* Inner floating KYC container matching the wireframe */}
-      <div className="flex w-full max-w-6xl h-[88vh] min-h-175 max-h-225 flex-col lg:flex-row rounded-[2.5rem] bg-background shadow-2xl overflow-hidden border border-border/60">
+      <div className="flex w-full max-w-6xl h-[88vh] min-h-[680px] max-h-[900px] flex-col lg:flex-row rounded-[2.5rem] bg-background shadow-2xl overflow-hidden border border-border/60">
         {/* ── Left panel — white ─────────────────────────────── */}
         <div className="hidden lg:flex lg:w-[40%] flex-col bg-background px-12 py-10 overflow-y-auto no-scrollbar border-r border-border">
           {/* Header Row: Back button, step counter + progress */}
@@ -905,7 +906,7 @@ export default function KycPage() {
                           ? [
                               {
                                 label: allValues.idType
-                                  ? ID_META[allValues.idType].label
+                                  ? ID_META[allValues.idType]?.label ?? "ID Number"
                                   : "ID Number",
                                 value: allValues.idNumber,
                               },
@@ -985,7 +986,12 @@ export default function KycPage() {
               <Button
                 type="button"
                 disabled={loading}
-                onClick={() => handleSubmit(onSubmit)()}
+                onClick={() =>
+                  handleSubmit(onSubmit, (formErrors) => {
+                    console.error("KYC validation errors:", formErrors);
+                    toast.error("Please fill in all required fields properly.");
+                  })()
+                }
                 className="bg-accent text-accent-foreground hover:bg-accent/90 h-12 px-10 rounded-xl font-bold text-[15px] transition-all"
               >
                 {uploading ? (

@@ -16,6 +16,9 @@ function createLimiter(options: {
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: options.skipSuccessfulRequests ?? false,
+    validate: {
+      trustProxy: false,
+    },
     handler: (req, res) => {
       const requestRateLimit = (req as any).rateLimit as
         | { resetTime?: Date }

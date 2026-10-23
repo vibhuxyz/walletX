@@ -2,6 +2,7 @@ type UserRole = "user" | "merchant" | "admin" | null;
 
 export const TEST_ACCOUNTS = {
   trial_user: {
+    id: "trial_user",
     email: "try.vikram.kumar01@gmail.com",
     password: "Vikram12@",
     name: "Trial User",
@@ -9,6 +10,7 @@ export const TEST_ACCOUNTS = {
     kycApproved: true,
   },
   customer: {
+    id: "customer",
     email: "vibhu@gmail.com",
     password: "Vikram12@",
     name: "Vibhu Gupta",
@@ -16,6 +18,7 @@ export const TEST_ACCOUNTS = {
     kycApproved: false,
   },
   verified_customer: {
+    id: "verified_customer",
     email: "try.vikram.kumar01@gmail.com",
     password: "Vikram12@",
     name: "Vikram kumar Verified",

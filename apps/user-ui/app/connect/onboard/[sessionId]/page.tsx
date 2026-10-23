@@ -50,7 +50,7 @@ export default function ConnectOnboardingPage() {
         return;
       }
       if (code === "KYC_REQUIRED") {
-        router.push("/auth/kyc");
+        router.push("/private/kyc");
         return;
       }
       toast.error(
@@ -207,7 +207,7 @@ export default function ConnectOnboardingPage() {
 
                     {!pinPending && !walletActive && (
                       <Button className="w-full" asChild>
-                        <Link href="/auth/kyc">
+                        <Link href="/private/kyc">
                           Complete KYC
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>

@@ -14,8 +14,8 @@ const app = express();
  
 const logger = new Logger("APIGateway");
 
-// Preserve real client IP when behind reverse proxies / tunnels.
-app.set("trust proxy", true);
+// Preserve real client IP when behind reverse proxies / tunnels (trust 1 hop).
+app.set("trust proxy", 1);
 
 // global middlewares apply to everything
 // 

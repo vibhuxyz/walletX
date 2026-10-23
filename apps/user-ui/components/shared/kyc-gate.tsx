@@ -94,7 +94,7 @@ export function KycGate({ children, featureName }: KycGateProps) {
         </div>
 
         <Button asChild className="mt-2 w-full gap-2 rounded-full px-8">
-          <Link href="/dashboard/kyc">
+          <Link href="/private/kyc">
             Complete KYC Now
             <ArrowRight className="h-4 w-4" />
           </Link>

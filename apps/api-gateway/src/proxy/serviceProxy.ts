@@ -13,10 +13,14 @@ const proxyHttpAgent = new http.Agent({
   keepAliveMsecs: 3000,
 });
 
-const serviceUnavailable = (res: Response) => {
-  res
-    .status(503)
-    .json({ success: false, error: { code: "SERVICE_UNAVAILABLE" } });
+const serviceUnavailable = (res: Response, serviceName: string) => {
+  res.status(503).json({
+    success: false,
+    error: {
+      code: "SERVICE_UNAVAILABLE",
+      message: `${serviceName} is currently unavailable`,
+    },
+  });
 };
 
 const applyCommonProxyHeaders = (proxyReq: any) => {
@@ -34,12 +38,16 @@ const createServiceProxy = (
     xfwd: true,
     pathRewrite,
     agent: proxyHttpAgent,
-    onProxyReq: (proxyReq: any) => {
-      applyCommonProxyHeaders(proxyReq);
-    },
-    onError: (err: any, _req: Request, res: Response) => {
-      logger.error(`${serviceName} proxy error`, err);
-      serviceUnavailable(res);
+    on: {
+      proxyReq: (proxyReq: any) => {
+        applyCommonProxyHeaders(proxyReq);
+      },
+      error: (err: any, _req: any, res: any) => {
+        logger.error(`${serviceName} proxy error: ${err.message}`, err);
+        if (res && "writeHead" in res && !res.headersSent) {
+          serviceUnavailable(res as Response, serviceName);
+        }
+      },
     },
   } as Options);
 
@@ -50,6 +58,11 @@ export const wsProxyMiddleware = createProxyMiddleware({
   ws: true,
   pathRewrite: {
     "^/ws": "",
+  },
+  on: {
+    error: (err: any) => {
+      logger.error("WebSocket proxy error", err);
+    },
   },
 } as Options);
 
@@ -103,7 +116,7 @@ export function setupProxies(app: Express) {
     createServiceProxy(
       ENV.MERCHANT_SERVICE_URL,
       {
-        "^/api/v1/merchant": "/api/v1/merchant",
+        "^/": "/api/v1/merchant/",
       },
       "Merchant service",
     ),

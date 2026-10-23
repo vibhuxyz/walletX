@@ -55,7 +55,7 @@ export default function CreatePinForm() {
     mutationFn: authApi.setupPin,
     onSuccess: () => {
       toast.success("PIN created successfully!");
-      router.replace("/auth/kyc");
+      router.replace("/private/kyc");
     },
     onError: (err: AxiosError<{ message: string }>) => {
       toast.error(err.response?.data?.message ?? "Failed to set PIN. Please try again.");

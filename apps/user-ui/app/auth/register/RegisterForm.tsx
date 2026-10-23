@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Eye, EyeOff, Loader2, MailWarning, PhoneOff } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -18,22 +19,34 @@ import { AuthOnboardingShell } from "@/components/shared/auth-onboarding-shell";
 
 type RegisterErrorType = "email_exists" | "phone_exists" | null;
 
-function classifyRegisterError(
-  data: Record<string, string> | undefined,
-): RegisterErrorType {
+function classifyRegisterError(data: any): RegisterErrorType {
   if (!data) return null;
-  const errorCode = (data.error ?? "").toUpperCase();
-  const message = (data.message ?? data.code ?? "").toLowerCase();
+  const errorCode = (
+    data.error?.code ??
+    data.code ??
+    (typeof data.error === "string" ? data.error : "")
+  )
+    .toString()
+    .toUpperCase();
+  const message = (data.error?.message ?? data.message ?? "")
+    .toString()
+    .toLowerCase();
   if (
     errorCode.includes("EMAIL") ||
     (message.includes("email") &&
-      (message.includes("exist") || message.includes("registered") || message.includes("taken")))
-  ) return "email_exists";
+      (message.includes("exist") ||
+        message.includes("registered") ||
+        message.includes("taken")))
+  )
+    return "email_exists";
   if (
     errorCode.includes("PHONE") ||
     (message.includes("phone") &&
-      (message.includes("exist") || message.includes("registered") || message.includes("taken")))
-  ) return "phone_exists";
+      (message.includes("exist") ||
+        message.includes("registered") ||
+        message.includes("taken")))
+  )
+    return "phone_exists";
   return null;
 }
 
@@ -58,7 +71,7 @@ export default function RegisterForm() {
       toast.success(`OTP sent to ${vars.email}!`);
       router.replace("/auth/verify-otp");
     },
-    onError: (err: AxiosError<Record<string, string>>) => {
+    onError: (err: AxiosError<any>) => {
       const data = err.response?.data;
       const errorType = classifyRegisterError(data);
       if (errorType === "email_exists") {
@@ -69,13 +82,17 @@ export default function RegisterForm() {
         setError("phone", { message: "This phone number is already in use." });
       } else {
         setRegisterError(null);
+        const errMsg =
+          data?.error?.message ??
+          data?.message ??
+          (typeof data?.error === "string" ? data.error : null) ??
+          data?.error?.code ??
+          data?.code ??
+          "Registration failed. Please try again.";
         toast.error(
           !err.response
             ? "Cannot reach WalletX API. Start the API gateway and auth service, then try again."
-            : data?.message ??
-                data?.code ??
-                data?.error ??
-                "Registration failed. Please try again.",
+            : errMsg,
         );
       }
     },
@@ -100,25 +117,27 @@ export default function RegisterForm() {
         className="flex flex-col gap-3.5"
       >
         {registerError === "email_exists" && (
-          <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3.5 py-3 text-sm text-destructive">
-            <MailWarning className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="font-semibold">Email already registered</p>
-              <p className="text-destructive/80 text-xs mt-0.5">
-                <Link href="/auth/login" className="font-semibold underline underline-offset-2">Sign in instead</Link>.
-              </p>
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <MailWarning className="h-4 w-4" />
+            <AlertTitle>Email already registered</AlertTitle>
+            <AlertDescription>
+              <Link
+                href="/auth/login"
+                className="font-semibold underline underline-offset-2"
+              >
+                Sign in instead
+              </Link>
+              .
+            </AlertDescription>
+          </Alert>
         )}
 
         {registerError === "phone_exists" && (
-          <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-3.5 py-3 text-sm text-warning-foreground">
-            <PhoneOff className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="font-semibold">Phone already in use</p>
-              <p className="text-xs mt-0.5 opacity-80">Please use a different number.</p>
-            </div>
-          </div>
+          <Alert variant="destructive">
+            <PhoneOff className="h-4 w-4" />
+            <AlertTitle>Phone already in use</AlertTitle>
+            <AlertDescription>Please use a different number.</AlertDescription>
+          </Alert>
         )}
 
         <div className="flex flex-col gap-1.5">
@@ -175,14 +194,16 @@ export default function RegisterForm() {
               className={errors.password ? "border-destructive pr-10" : "pr-10"}
               {...register("password")}
             />
-            <button
+            <Button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-transparent"
               onClick={() => setShowPassword((p) => !p)}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+            </Button>
           </div>
           {errors.password ? (
             <p className="text-xs text-destructive">{errors.password.message}</p>

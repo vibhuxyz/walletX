@@ -23,14 +23,17 @@ export const activateWalletSchema = z
       pincode: z.string().regex(/^\d{6}$/, "Pincode must be 6 digits"),
     }),
     idType: idTypeEnum,
-    idNumber: z.string().optional(),
+    idNumber: z.string().optional().or(z.literal("")),
 
-    idFrontUrl: z.string().url("Invalid idFrontUrl").optional(),
-    idBackUrl: z.string().url("Invalid idBackUrl").optional(),
-    selfieUrl: z.string().url("Invalid selfieUrl").optional(),
+    idFrontUrl: z.string().url("Invalid idFrontUrl").optional().or(z.literal("")),
+    idBackUrl: z.string().url("Invalid idBackUrl").optional().or(z.literal("")),
+    selfieUrl: z.string().url("Invalid selfieUrl").optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {
-    if (!data.idNumber && !data.idFrontUrl) {
+    const hasIdNumber = Boolean(data.idNumber && data.idNumber.trim().length > 0);
+    const hasFrontUrl = Boolean(data.idFrontUrl && data.idFrontUrl.trim().length > 0);
+
+    if (!hasIdNumber && !hasFrontUrl) {
       ctx.addIssue({
         code: "custom",
         message: "Provide an ID number or upload the front image",
@@ -38,7 +41,7 @@ export const activateWalletSchema = z
       });
     }
 
-    if (data.idNumber && !ID_PATTERNS[data.idType].test(data.idNumber)) {
+    if (hasIdNumber && !ID_PATTERNS[data.idType].test(data.idNumber!)) {
       // ✅ Uses the exported pattern — no duplication even inside the schema itself
       ctx.addIssue({
         code: "custom",
